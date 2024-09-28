@@ -26,6 +26,26 @@ impl Material {
         self
     }
 
+    pub fn with_ambient(mut self, ambient: f64) -> Self {
+        self.ambient = ambient;
+        self
+    }
+
+    pub fn with_diffuse(mut self, diffuse: f64) -> Self {
+        self.diffuse = diffuse;
+        self
+    }
+
+    pub fn with_specular(mut self, specular: f64) -> Self {
+        self.specular = specular;
+        self
+    }
+
+    pub fn with_shininess(mut self, shininess: f64) -> Self {
+        self.shininess = shininess;
+        self
+    }
+
     pub fn lighting(
         &self,
         light: PointLight,

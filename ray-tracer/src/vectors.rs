@@ -1,5 +1,7 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
+use approx_eq::ApproxEq;
+
 use crate::{points::Point, tuples::Tuple};
 
 #[derive(Debug, Copy, Clone)]
@@ -69,8 +71,7 @@ impl Tuple for Vector {
 
 impl PartialEq for Vector {
     fn eq(&self, other: &Self) -> bool {
-        let epsilon = 0.00001;
-        (self.x - other.x) < epsilon && (self.y - other.y) < epsilon && (self.z - other.z) < epsilon
+        self.x.approx_eq(other.x) && self.y.approx_eq(other.y) && self.z.approx_eq(other.z)
     }
 }
 
@@ -236,7 +237,7 @@ mod tests {
 
     #[test]
     fn reflecting_a_vector_off_a_slanted_surface() {
-        let v = Vector::new(1.0, -1.0, 0.0);
+        let v = Vector::new(0.0, -1.0, 0.0);
         let n = Vector::new(f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0, 0.0);
         let r = v.reflect(n);
         assert_eq!(r, Vector::new(1.0, 0.0, 0.0));

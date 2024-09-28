@@ -1,4 +1,9 @@
-use std::ops::{Add, Mul, Sub};
+use std::{
+    iter::Sum,
+    ops::{Add, Mul, Sub},
+};
+
+use approx_eq::ApproxEq;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Color {
@@ -51,8 +56,7 @@ impl Color {
 
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
-        let epsilon = 0.00001;
-        (self.r - other.r) < epsilon && (self.g - other.g) < epsilon && (self.b - other.b) < epsilon
+        self.r.approx_eq(other.r) && self.g.approx_eq(other.g) && self.b.approx_eq(other.b)
     }
 }
 
@@ -97,6 +101,12 @@ impl Mul<&Color> for &Color {
 
     fn mul(self, rhs: &Color) -> Self::Output {
         Color::new(self.r * rhs.r, self.g * rhs.g, self.b * rhs.b)
+    }
+}
+
+impl Sum for Color {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Color::new(0.0, 0.0, 0.0), |acc, c| &acc + &c)
     }
 }
 

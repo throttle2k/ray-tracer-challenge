@@ -1,10 +1,24 @@
-use crate::matrix::Matrix;
+use crate::{matrix::Matrix, points::Point, tuples::Tuple, vectors::Vector};
 
 pub type Transformation = Matrix;
 
 impl Transformation {
     pub fn new_transform() -> Self {
         Matrix::identity(4)
+    }
+
+    pub fn view_transform(from: Point, to: Point, up: Vector) -> Self {
+        let forward = (to - from).normalize();
+        let up_normalized = up.normalize();
+        let left = forward * up_normalized;
+        let true_up = left * forward;
+        let orientation = Self::new(vec![
+            vec![left.x(), left.y(), left.z(), 0.0],
+            vec![true_up.x(), true_up.y(), true_up.z(), 0.0],
+            vec![-forward.x(), -forward.y(), -forward.z(), 0.0],
+            vec![0.0, 0.0, 0.0, 1.0],
+        ]);
+        &orientation * &Transformation::new_transform().translation(-from.x(), -from.y(), -from.z())
     }
 
     pub fn translation(&self, x: f64, y: f64, z: f64) -> Self {
@@ -152,7 +166,7 @@ mod tests {
         let inv = half_quarter.inverse().unwrap();
         assert_eq!(
             &inv * &p,
-            Point::new(0.0, f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0)
+            Point::new(0.0, f64::sqrt(2.0) / 2.0, -f64::sqrt(2.0) / 2.0)
         );
     }
 
@@ -230,5 +244,52 @@ mod tests {
             .scaling(5.0, 5.0, 5.0)
             .translation(10.0, 5.0, 7.0);
         assert_eq!(&transform * &p, Point::new(15.0, 0.0, 7.0));
+    }
+
+    #[test]
+    fn transformation_matrix_for_default_orientation() {
+        let from = Point::zero();
+        let to = Point::new(0.0, 0.0, -1.0);
+        let up = Vector::y_norm();
+        let t = Transformation::view_transform(from, to, up);
+        assert_eq!(t, Matrix::identity(4));
+    }
+
+    #[test]
+    fn a_view_transformation_matrix_looking_in_positive_z_direction() {
+        let from = Point::zero();
+        let to = Point::new(0.0, 0.0, 1.0);
+        let up = Vector::y_norm();
+        let t = Transformation::view_transform(from, to, up);
+        assert_eq!(t, Transformation::new_transform().scaling(-1.0, 1.0, -1.0));
+    }
+
+    #[test]
+    fn the_view_transformation_moves_the_world() {
+        let from = Point::new(0.0, 0.0, 8.0);
+        let to = Point::zero();
+        let up = Vector::y_norm();
+        let t = Transformation::view_transform(from, to, up);
+        assert_eq!(
+            t,
+            Transformation::new_transform().translation(0.0, 0.0, -8.0)
+        );
+    }
+
+    #[test]
+    fn an_arbitrary_view_transformation() {
+        let from = Point::new(1.0, 3.0, 2.0);
+        let to = Point::new(4.0, -2.0, 8.0);
+        let up = Vector::new(1.0, 1.0, 0.0);
+        let t = Transformation::view_transform(from, to, up);
+        assert_eq!(
+            t,
+            Matrix::new(vec![
+                vec![-0.50709, 0.50709, 0.67612, -2.36643],
+                vec![0.76772, 0.60609, 0.12122, -2.82843],
+                vec![-0.35857, 0.59761, -0.71714, 0.00000],
+                vec![0.00000, 0.00000, 0.00000, 1.00000]
+            ])
+        );
     }
 }

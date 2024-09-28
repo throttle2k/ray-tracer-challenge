@@ -1,9 +1,9 @@
 [package]
-name = "ray-tracer"
+name = "world-drawing"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 colo-rs = { workspace = true }
-approx-eq = { workspace = true }
+ray-tracer = { workspace = true }
 rayon = "1.10.0"

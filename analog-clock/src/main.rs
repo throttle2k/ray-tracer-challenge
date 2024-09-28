@@ -17,9 +17,5 @@ fn main() {
         canvas.write_pixel(h.x().round() as usize, h.y().round() as usize, Color::red());
     }
     let ppm = PPM::from(canvas);
-    fs::write(
-        "/home/throttle/development/rust/ray-tracer-challenge/analog-clock/clock.ppm",
-        ppm.to_string(),
-    )
-    .unwrap();
+    fs::write("clock.ppm", ppm.to_string()).unwrap();
 }

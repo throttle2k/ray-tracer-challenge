@@ -1,7 +1,6 @@
 [package]
-name = "colo-rs"
+name = "approx-eq"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-approx-eq = { workspace = true }

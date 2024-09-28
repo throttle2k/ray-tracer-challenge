@@ -2,7 +2,7 @@ use colo_rs::colors::Color;
 
 use crate::points::Point;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PointLight {
     pub position: Point,
     pub intensity: Color,

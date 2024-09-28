@@ -1,5 +1,7 @@
 use std::ops::{Index, IndexMut, Mul, Sub};
 
+use approx_eq::ApproxEq;
+
 use crate::tuples::Tuple;
 
 #[derive(Debug, Clone)]
@@ -128,9 +130,14 @@ impl IndexMut<(usize, usize)> for Matrix {
 
 impl PartialEq for Matrix {
     fn eq(&self, other: &Self) -> bool {
-        let epsilon = 0.00001;
-        let diff = self - other;
-        diff.data.iter().all(|r| r.iter().all(|e| *e < epsilon))
+        for row in 0..self.data.len() {
+            for col in 0..self.data.len() {
+                if !self[(row, col)].approx_eq(other[(row, col)]) {
+                    return false;
+                }
+            }
+        }
+        true
     }
 }
 

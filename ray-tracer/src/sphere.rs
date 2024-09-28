@@ -31,6 +31,10 @@ impl Sphere {
         &self.material
     }
 
+    pub fn material_mut(&mut self) -> &mut Material {
+        &mut self.material
+    }
+
     pub fn intersect<'a>(&'a self, r: &Ray) -> Intersections<'a> {
         if let Some(t) = self.transform.inverse() {
             let ray = r.transform(t);

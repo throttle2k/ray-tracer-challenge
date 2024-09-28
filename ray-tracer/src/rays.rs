@@ -7,9 +7,9 @@ use crate::{
     vectors::Vector,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ray {
-    origin: Point,
+    pub origin: Point,
     pub direction: Vector,
 }
 
@@ -159,9 +159,8 @@ mod tests {
 
     #[test]
     fn translating_a_ray() {
-        let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::new(0.0, 1.0, 0.0));
-        let m = Matrix::new_transform();
-        m.translation(3.0, 4.0, 5.0);
+        let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::y_norm());
+        let m = Matrix::new_transform().translation(3.0, 4.0, 5.0);
         let r2 = r.transform(m);
         assert_eq!(r2.origin, Point::new(4.0, 6.0, 8.0));
         assert_eq!(r2.direction, Vector::new(0.0, 1.0, 0.0));
@@ -169,9 +168,8 @@ mod tests {
 
     #[test]
     fn scaling_a_ray() {
-        let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::new(0.0, 1.0, 0.0));
-        let m = Matrix::new_transform();
-        m.scaling(3.0, 4.0, 5.0);
+        let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::y_norm());
+        let m = Matrix::new_transform().scaling(2.0, 3.0, 4.0);
         let r2 = r.transform(m);
         assert_eq!(r2.origin, Point::new(2.0, 6.0, 12.0));
         assert_eq!(r2.direction, Vector::new(0.0, 3.0, 0.0));
@@ -179,7 +177,7 @@ mod tests {
 
     #[test]
     fn intersecting_scaled_sphere_with_ray() {
-        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
         let s =
             Sphere::new().with_transform(Transformation::new_transform().scaling(2.0, 2.0, 2.0));
         let xs = s.intersect(&r);

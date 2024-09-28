@@ -41,9 +41,5 @@ fn main() {
 
     let canvas = canvas_mutex.lock().unwrap();
     let ppm = PPM::from(canvas.clone());
-    fs::write(
-        "/home/throttle/development/rust/ray-tracer-challenge/sphere-drawing/sphere.ppm",
-        ppm.to_string(),
-    )
-    .unwrap();
+    fs::write("sphere.ppm", ppm.to_string()).unwrap();
 }

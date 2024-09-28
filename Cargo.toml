@@ -1,7 +1,8 @@
 [workspace]
-members = [ "analog-clock", "colo-rs", "ray-tracer", "sphere-drawing", "virtual-cannon"]
+members = [ "analog-clock", "approx-eq", "colo-rs", "ray-tracer", "sphere-drawing", "virtual-cannon", "world-drawing"]
 resolver = "2"
 
 [workspace.dependencies]
-ray-tracer = { path = "./ray-tracer/" }
-colo-rs = { path = "./colo-rs/"}
+ray-tracer = { path = "./ray-tracer" }
+colo-rs = { path = "./colo-rs"}
+approx-eq = { path = "./approx-eq" }

@@ -1,5 +1,7 @@
 use std::ops::{Add, Sub};
 
+use approx_eq::ApproxEq;
+
 use crate::{tuples::Tuple, vectors::Vector};
 
 #[derive(Debug, Clone, Copy)]
@@ -37,8 +39,7 @@ impl Tuple for Point {
 
 impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
-        let epsilon = 0.00001;
-        (self.x - other.x) < epsilon && (self.y - other.y) < epsilon && (self.z - other.z) < epsilon
+        self.x.approx_eq(other.x) && self.y.approx_eq(other.y) && self.z.approx_eq(other.z)
     }
 }
 

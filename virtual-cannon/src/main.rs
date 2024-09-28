@@ -54,9 +54,5 @@ fn main() {
         tick(&mut p, &e);
     }
     let ppm = PPM::from(canvas);
-    fs::write(
-        "/home/throttle/development/rust/ray-tracer-challenge/virtual-cannon/trajectory.ppm",
-        ppm.to_string(),
-    )
-    .unwrap();
+    fs::write("trajectory.ppm", ppm.to_string()).unwrap();
 }
