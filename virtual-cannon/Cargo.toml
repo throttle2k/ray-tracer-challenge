@@ -1,0 +1,9 @@
+[package]
+name = "virtual-cannon"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ray-tracer = { workspace = true }
+colo-rs = { workspace = true }
+
