@@ -10,6 +10,18 @@ pub struct Vector {
 }
 
 impl Vector {
+    pub fn x_norm() -> Self {
+        Self::new(1.0, 0.0, 0.0)
+    }
+
+    pub fn y_norm() -> Self {
+        Self::new(0.0, 1.0, 0.0)
+    }
+
+    pub fn z_norm() -> Self {
+        Self::new(0.0, 0.0, 1.0)
+    }
+
     pub fn magnitude(&self) -> f64 {
         f64::sqrt(self.x() * self.x() + self.y() * self.y() + self.z() * self.z())
     }
@@ -20,6 +32,12 @@ impl Vector {
 
     pub fn dot(&self, other: Vector) -> f64 {
         self.x() * other.x() + self.y() * other.y() + self.z() * other.z()
+    }
+
+    pub fn reflect(&self, n: Vector) -> Vector {
+        let dp = self.dot(n);
+        let double_n = n * 2.0;
+        *self - (double_n * dp)
     }
 }
 
@@ -206,5 +224,21 @@ mod tests {
         let vector2 = Vector::new(2.0, 3.0, 4.0);
         assert_eq!(vector1 * vector2, Vector::new(-1.0, 2.0, -1.0));
         assert_eq!(vector2 * vector1, Vector::new(1.0, -2.0, 1.0));
+    }
+
+    #[test]
+    fn reflecting_a_vector_approaching_45_deg() {
+        let v = Vector::new(1.0, -1.0, 0.0);
+        let n = Vector::y_norm();
+        let r = v.reflect(n);
+        assert_eq!(r, Vector::new(1.0, 1.0, 0.0));
+    }
+
+    #[test]
+    fn reflecting_a_vector_off_a_slanted_surface() {
+        let v = Vector::new(1.0, -1.0, 0.0);
+        let n = Vector::new(f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0, 0.0);
+        let r = v.reflect(n);
+        assert_eq!(r, Vector::new(1.0, 0.0, 0.0));
     }
 }

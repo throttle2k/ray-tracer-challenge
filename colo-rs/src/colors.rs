@@ -28,16 +28,10 @@ impl Color {
         Self::new(0.0, 0.0, 1.0)
     }
 
-    pub fn normalize(&mut self) {
-        if self.r < 0.0 {
-            self.r = 0.0
-        };
-        if self.g < 0.0 {
-            self.g = 0.0
-        };
-        if self.b < 0.0 {
-            self.b = 0.0
-        };
+    pub fn normalize(&mut self, min: f64, max: f64) {
+        self.r = self.r.clamp(min, max);
+        self.g = self.g.clamp(min, max);
+        self.b = self.b.clamp(min, max);
     }
 
     pub fn round(&mut self) {
@@ -48,7 +42,7 @@ impl Color {
 
     pub fn as_255_string(&self) -> String {
         let mut color_as_255 = self * 255.0;
-        color_as_255.normalize();
+        color_as_255.normalize(0.0, 255.0);
         color_as_255.round();
 
         format!("{} {} {}", color_as_255.r, color_as_255.g, color_as_255.b)
