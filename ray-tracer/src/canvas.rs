@@ -1,5 +1,6 @@
 use colo_rs::colors::Color;
 
+#[derive(Clone)]
 pub struct Canvas {
     width: usize,
     height: usize,
