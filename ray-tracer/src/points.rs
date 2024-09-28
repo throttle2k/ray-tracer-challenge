@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 
 use crate::{tuples::Tuple, vectors::Vector};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Point {
     x: f64,
     y: f64,

@@ -1,7 +1,10 @@
 pub mod canvas;
+pub mod intersections;
 pub mod matrix;
 pub mod points;
 pub mod ppm;
+pub mod rays;
+pub mod sphere;
 pub mod transformations;
 pub mod tuples;
 pub mod vectors;

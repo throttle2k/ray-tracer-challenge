@@ -1,5 +1,5 @@
 [workspace]
-members = [ "analog-clock", "colo-rs", "ray-tracer", "virtual-cannon"]
+members = [ "analog-clock", "colo-rs", "ray-tracer", "sphere-drawing", "virtual-cannon"]
 resolver = "2"
 
 [workspace.dependencies]

@@ -2,7 +2,7 @@ use std::ops::{Index, IndexMut, Mul, Sub};
 
 use crate::tuples::Tuple;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Matrix {
     data: Vec<Vec<f64>>,
 }

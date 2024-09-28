@@ -22,6 +22,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sphere-drawing"
+version = "0.1.0"
+dependencies = [
+ "colo-rs",
+ "ray-tracer",
+]
+
+[[package]]
 name = "virtual-cannon"
 version = "0.1.0"
 dependencies = [
