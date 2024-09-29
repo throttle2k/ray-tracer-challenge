@@ -1,5 +1,7 @@
 use std::ops::{Deref, DerefMut, Index};
 
+use approx_eq::EPSILON;
+
 use crate::{points::Point, rays::Ray, sphere::Sphere, vectors::Vector};
 
 #[derive(Debug, Clone, Copy)]
@@ -13,6 +15,7 @@ pub struct Computation<'a> {
     pub t: f64,
     pub object: &'a Sphere,
     pub point: Point,
+    pub over_point: Point,
     pub eye_v: Vector,
     pub normal_v: Vector,
     pub inside: bool,
@@ -33,11 +36,13 @@ impl<'a> Intersection<'a> {
         if inside {
             normal_v = -normal_v;
         }
+        let over_point = point + normal_v * EPSILON;
 
         Computation {
             t,
             object,
             point,
+            over_point,
             eye_v,
             normal_v,
             inside,
@@ -102,9 +107,10 @@ impl<'a> Index<usize> for Intersections<'a> {
 
 #[cfg(test)]
 mod tests {
+    use approx_eq::EPSILON;
     use colo_rs::colors::Color;
 
-    use crate::{lights::PointLight, tuples::Tuple, world::World};
+    use crate::{lights::PointLight, transformations::Transformation, tuples::Tuple, world::World};
 
     use super::*;
 
@@ -222,5 +228,16 @@ mod tests {
         let comps = i.prepare_computations(r);
         let c = w.shade_hit(comps);
         assert_eq!(c, Color::new(0.90498, 0.90498, 0.90498));
+    }
+
+    #[test]
+    fn the_hit_should_offset_the_point() {
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
+        let t = Transformation::new_transform().translation(0.0, 0.0, 1.0);
+        let shape = Sphere::new().with_transform(t);
+        let i = Intersection::new(5.0, &shape);
+        let comps = i.prepare_computations(r);
+        assert!(comps.over_point.z() < -EPSILON / 2.0);
+        assert!(comps.point.z() > comps.over_point.z());
     }
 }

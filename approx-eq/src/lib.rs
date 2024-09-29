@@ -1,4 +1,4 @@
-const EPSILON: f64 = 0.00001;
+pub const EPSILON: f64 = 0.00001;
 
 pub trait ApproxEq {
     fn approx_eq(&self, other: f64) -> bool;
