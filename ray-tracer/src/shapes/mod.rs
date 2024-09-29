@@ -1,6 +1,8 @@
+mod plane;
 mod sphere;
 mod test_shape;
 
+use plane::Plane;
 use sphere::Sphere;
 use test_shape::TestShape;
 
@@ -16,25 +18,32 @@ use crate::{
 pub enum Shape {
     Sphere,
     TestShape,
+    Plane,
 }
 
 impl Shape {
     fn normal_at(&self, object_point: Point) -> Vector {
         match self {
-            Shape::Sphere => Sphere::normal_at(object_point),
             Shape::TestShape => TestShape::normal_at(object_point),
+            Shape::Sphere => Sphere::normal_at(object_point),
+            Shape::Plane => Plane::normal_at(object_point),
         }
     }
 
     fn intersect<'a>(&self, object: &'a Object, ray: Ray) -> Intersections<'a> {
         let mut intersections = Intersections::new();
         match self {
+            Shape::TestShape => unreachable!(),
             Shape::Sphere => {
                 let xs = Sphere::intersect(ray);
                 xs.iter()
                     .for_each(|x| intersections.push(Intersection::new(*x, object)));
             }
-            Shape::TestShape => todo!(),
+            Shape::Plane => {
+                let xs = Plane::intersects(ray);
+                xs.iter()
+                    .for_each(|x| intersections.push(Intersection::new(*x, object)));
+            }
         }
         intersections
     }
@@ -79,6 +88,10 @@ impl Object {
 
     pub fn new_test_shape() -> Self {
         Self::new(Shape::TestShape)
+    }
+
+    pub fn new_plane() -> Self {
+        Self::new(Shape::Plane)
     }
 
     pub fn with_transform(mut self, transform: Transformation) -> Self {
@@ -227,7 +240,7 @@ mod tests {
     }
 
     #[test]
-    fn computing_the_normal_on_a_transformed_sshape() {
+    fn computing_the_normal_on_a_transformed_shape() {
         let s = Object::new_test_shape().with_transform(
             Transformation::new_transform()
                 .rotation_z(PI / 5.0)

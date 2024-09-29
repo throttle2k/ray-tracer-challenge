@@ -1,0 +1,9 @@
+[package]
+name = "plane-drawing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+colo-rs = { workspace = true }
+ray-tracer = { workspace = true }
+rayon = "1.10.0"
