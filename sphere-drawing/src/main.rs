@@ -2,8 +2,13 @@ use std::{fs, sync::Mutex};
 
 use colo_rs::colors::Color;
 use ray_tracer::{
-    canvas::Canvas, lights::PointLight, materials::Material, ppm::PPM, rays::Ray, sphere::Sphere,
-    tuples::points::Point, tuples::Tuple,
+    canvas::Canvas,
+    lights::PointLight,
+    materials::Material,
+    ppm::PPM,
+    rays::Ray,
+    shapes::Object,
+    tuples::{points::Point, Tuple},
 };
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
@@ -15,7 +20,8 @@ fn main() {
     let pixel_size = wall_size / canvas_pixels as f64;
     let half = wall_size / 2.0;
     let canvas_mutex = Mutex::new(Canvas::new(canvas_pixels, canvas_pixels));
-    let shape = Sphere::new().with_material(Material::new().with_color(Color::new(1.0, 0.2, 1.0)));
+    let shape =
+        Object::new_sphere().with_material(Material::new().with_color(Color::new(1.0, 0.2, 1.0)));
     let light_position = Point::new(-10.0, 10.0, -10.0);
     let light_color = Color::new(1.0, 1.0, 1.0);
     let light = PointLight::new(light_position, light_color);

@@ -2,8 +2,13 @@ use std::{f64::consts::PI, fs};
 
 use colo_rs::colors::Color;
 use ray_tracer::{
-    camera::Camera, lights::PointLight, materials::Material, ppm::PPM, sphere::Sphere,
-    transformations::Transformation, tuples::points::Point, tuples::vectors::Vector, tuples::Tuple,
+    camera::Camera,
+    lights::PointLight,
+    materials::Material,
+    ppm::PPM,
+    shapes::Object,
+    transformations::Transformation,
+    tuples::{points::Point, vectors::Vector, Tuple},
     world::World,
 };
 
@@ -12,7 +17,7 @@ fn main() {
     let floor_m = Material::new()
         .with_color(Color::new(1.0, 0.9, 0.9))
         .with_specular(0.0);
-    let floor = Sphere::new()
+    let floor = Object::new_sphere()
         .with_transform(floor_t)
         .with_material(floor_m.clone());
 
@@ -22,7 +27,7 @@ fn main() {
         .rotation_y(-PI / 4.0)
         .translation(0.0, 0.0, 5.0);
     let left_wall_m = floor_m.clone();
-    let left_wall = Sphere::new()
+    let left_wall = Object::new_sphere()
         .with_transform(left_wall_t)
         .with_material(left_wall_m);
 
@@ -32,7 +37,7 @@ fn main() {
         .rotation_y(PI / 4.0)
         .translation(0.0, 0.0, 5.0);
     let right_wall_m = floor_m.clone();
-    let right_wall = Sphere::new()
+    let right_wall = Object::new_sphere()
         .with_transform(right_wall_t)
         .with_material(right_wall_m);
 
@@ -41,7 +46,7 @@ fn main() {
         .with_color(Color::new(0.1, 1.0, 0.5))
         .with_diffuse(0.7)
         .with_specular(0.3);
-    let middle = Sphere::new()
+    let middle = Object::new_sphere()
         .with_material(middle_m)
         .with_transform(middle_t);
 
@@ -52,7 +57,9 @@ fn main() {
         .with_color(Color::new(0.5, 1.0, 0.1))
         .with_diffuse(0.7)
         .with_specular(0.3);
-    let right = Sphere::new().with_material(right_m).with_transform(right_t);
+    let right = Object::new_sphere()
+        .with_material(right_m)
+        .with_transform(right_t);
 
     let left_t = Transformation::new_transform()
         .scaling(0.33, 0.33, 0.33)
@@ -61,7 +68,9 @@ fn main() {
         .with_color(Color::new(1.0, 0.8, 0.1))
         .with_diffuse(0.7)
         .with_specular(0.3);
-    let left = Sphere::new().with_material(left_m).with_transform(left_t);
+    let left = Object::new_sphere()
+        .with_material(left_m)
+        .with_transform(left_t);
 
     let light_source = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
 

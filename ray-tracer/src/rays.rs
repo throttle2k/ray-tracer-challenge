@@ -1,10 +1,8 @@
 use crate::{
     intersections::{Intersection, Intersections},
-    sphere::Sphere,
+    shapes::Object,
     transformations::Transformation,
-    tuples::points::Point,
-    tuples::vectors::Vector,
-    tuples::Tuple,
+    tuples::{points::Point, vectors::Vector, Tuple},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -22,7 +20,7 @@ impl Ray {
         self.origin + self.direction * distance
     }
 
-    pub fn intersects<'a>(&self, object: &'a Sphere) -> Intersections<'a> {
+    pub fn intersects<'a>(&self, object: &'a Object) -> Intersections<'a> {
         let sphere_to_ray = self.origin - Point::new(0.0, 0.0, 0.0);
         let a = self.direction.dot(self.direction);
         let b = 2.0 * self.direction.dot(sphere_to_ray);
@@ -81,7 +79,7 @@ mod tests {
     #[test]
     fn a_ray_intersects_a_sphere_in_two_points() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let xs = r.intersects(&s);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
@@ -91,7 +89,7 @@ mod tests {
     #[test]
     fn a_ray_intersects_a_sphere_at_a_tangent() {
         let r = Ray::new(Point::new(0.0, 1.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let xs = r.intersects(&s);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 5.0);
@@ -99,9 +97,9 @@ mod tests {
     }
 
     #[test]
-    fn a_ray_misss_a_sphere() {
+    fn a_ray_misses_a_sphere() {
         let r = Ray::new(Point::new(0.0, 2.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let xs = r.intersects(&s);
         assert_eq!(xs.len(), 0);
     }
@@ -109,7 +107,7 @@ mod tests {
     #[test]
     fn a_ray_originate_inside_a_sphere() {
         let r = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::new(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let xs = r.intersects(&s);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -1.0);
@@ -119,7 +117,7 @@ mod tests {
     #[test]
     fn a_sphere_behind_a_ray() {
         let r = Ray::new(Point::new(0.0, 0.0, 5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let xs = r.intersects(&s);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -6.0);
@@ -128,7 +126,7 @@ mod tests {
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let i = Intersection::new(3.5, &s);
         assert_eq!(i.t, 3.5);
         assert_eq!(i.object, &s);
@@ -136,7 +134,7 @@ mod tests {
 
     #[test]
     fn aggregating_intersections() {
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let i1 = Intersection::new(1.0, &s);
         let i2 = Intersection::new(2.0, &s);
         let mut xs = Intersections::new();
@@ -150,7 +148,7 @@ mod tests {
     #[test]
     fn intersect_sets_the_objects_in_intersections() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let xs = r.intersects(&s);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].object, &s);
@@ -178,8 +176,8 @@ mod tests {
     #[test]
     fn intersecting_scaled_sphere_with_ray() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
-        let s =
-            Sphere::new().with_transform(Transformation::new_transform().scaling(2.0, 2.0, 2.0));
+        let s = Object::new_sphere()
+            .with_transform(Transformation::new_transform().scaling(2.0, 2.0, 2.0));
         let xs = s.intersect(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 3.0);
@@ -189,7 +187,7 @@ mod tests {
     #[test]
     fn intersecting_translated_sphere_with_ray() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = Sphere::new()
+        let s = Object::new_sphere()
             .with_transform(Transformation::new_transform().translation(5.0, 0.0, 0.0));
         let xs = s.intersect(&r);
         assert_eq!(xs.len(), 0);

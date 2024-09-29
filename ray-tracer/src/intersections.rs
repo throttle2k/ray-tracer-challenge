@@ -2,18 +2,22 @@ use std::ops::{Deref, DerefMut, Index};
 
 use approx_eq::EPSILON;
 
-use crate::{rays::Ray, sphere::Sphere, tuples::points::Point, tuples::vectors::Vector};
+use crate::{
+    rays::Ray,
+    shapes::Object,
+    tuples::{points::Point, vectors::Vector},
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Intersection<'a> {
     pub t: f64,
-    pub object: &'a Sphere,
+    pub object: &'a Object,
 }
 
 #[derive(Debug)]
 pub struct Computation<'a> {
     pub t: f64,
-    pub object: &'a Sphere,
+    pub object: &'a Object,
     pub point: Point,
     pub over_point: Point,
     pub eye_v: Vector,
@@ -22,7 +26,7 @@ pub struct Computation<'a> {
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new(t: f64, object: &'a Sphere) -> Self {
+    pub fn new(t: f64, object: &'a Object) -> Self {
         Self { t, object }
     }
 
@@ -116,7 +120,7 @@ mod tests {
 
     #[test]
     fn hit_when_all_intersections_have_positive_t() {
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let i1 = Intersection::new(1.0, &s);
         let i2 = Intersection::new(2.0, &s);
         let mut xs = Intersections::new();
@@ -130,7 +134,7 @@ mod tests {
 
     #[test]
     fn hit_when_some_intersections_have_negative_t() {
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let i1 = Intersection::new(-1.0, &s);
         let i2 = Intersection::new(1.0, &s);
         let mut xs = Intersections::new();
@@ -144,7 +148,7 @@ mod tests {
 
     #[test]
     fn hit_when_all_intersections_have_negative_t() {
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let i1 = Intersection::new(-1.0, &s);
         let i2 = Intersection::new(-2.0, &s);
         let mut xs = Intersections::new();
@@ -156,7 +160,7 @@ mod tests {
 
     #[test]
     fn hit_is_always_the_lowest_non_negative_intersection() {
-        let s = Sphere::new();
+        let s = Object::new_sphere();
         let i1 = Intersection::new(5.0, &s);
         let i2 = Intersection::new(7.0, &s);
         let i3 = Intersection::new(-3.0, &s);
@@ -175,8 +179,8 @@ mod tests {
     #[test]
     fn precomputing_state_of_an_intersection() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
-        let shape = Sphere::new();
-        let i = Intersection::new(4.0, &shape);
+        let s = Object::new_sphere();
+        let i = Intersection::new(4.0, &s);
         let comps = i.prepare_computations(r);
         assert_eq!(comps.object, i.object);
         assert_eq!(comps.point, Point::new(0.0, 0.0, -1.0));
@@ -187,8 +191,8 @@ mod tests {
     #[test]
     fn hit_when_intersection_occurs_outside() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
-        let shape = Sphere::new();
-        let i = Intersection::new(4.0, &shape);
+        let s = Object::new_sphere();
+        let i = Intersection::new(4.0, &s);
         let comps = i.prepare_computations(r);
         assert_eq!(comps.inside, false);
     }
@@ -196,8 +200,8 @@ mod tests {
     #[test]
     fn hit_when_intersection_occurs_inside() {
         let r = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::z_norm());
-        let shape = Sphere::new();
-        let i = Intersection::new(1.0, &shape);
+        let s = Object::new_sphere();
+        let i = Intersection::new(1.0, &s);
         let comps = i.prepare_computations(r);
         assert_eq!(comps.inside, true);
         assert_eq!(comps.point, Point::new(0.0, 0.0, 1.0));
@@ -234,7 +238,7 @@ mod tests {
     fn the_hit_should_offset_the_point() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
         let t = Transformation::new_transform().translation(0.0, 0.0, 1.0);
-        let shape = Sphere::new().with_transform(t);
+        let shape = Object::new_sphere().with_transform(t);
         let i = Intersection::new(5.0, &shape);
         let comps = i.prepare_computations(r);
         assert!(comps.over_point.z() < -EPSILON / 2.0);

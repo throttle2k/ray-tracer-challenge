@@ -5,16 +5,15 @@ use crate::{
     lights::PointLight,
     materials::Material,
     rays::Ray,
-    sphere::Sphere,
+    shapes::Object,
     transformations::Transformation,
-    tuples::points::Point,
-    tuples::Tuple,
+    tuples::{points::Point, Tuple},
 };
 
 #[derive(Debug)]
 pub struct World {
     lights: Vec<PointLight>,
-    objects: Vec<Sphere>,
+    objects: Vec<Object>,
 }
 
 impl Default for World {
@@ -25,9 +24,9 @@ impl Default for World {
             .with_color(Color::new(0.8, 1.0, 0.6))
             .with_diffuse(0.7)
             .with_specular(0.2);
-        let s1 = Sphere::new().with_material(m1);
+        let s1 = Object::new_sphere().with_material(m1);
         let t2 = Transformation::new_transform().scaling(0.5, 0.5, 0.5);
-        let s2 = Sphere::new().with_transform(t2);
+        let s2 = Object::new_sphere().with_transform(t2);
         let objects = vec![s1, s2];
         Self { lights, objects }
     }
@@ -46,7 +45,7 @@ impl World {
         self
     }
 
-    pub fn with_objects(mut self, objects: Vec<Sphere>) -> Self {
+    pub fn with_objects(mut self, objects: Vec<Object>) -> Self {
         self.objects = objects;
         self
     }
@@ -55,11 +54,11 @@ impl World {
         &self.lights
     }
 
-    pub fn objects(&self) -> &[Sphere] {
+    pub fn objects(&self) -> &[Object] {
         &self.objects
     }
 
-    pub fn object_mut(&mut self, idx: usize) -> Option<&mut Sphere> {
+    pub fn object_mut(&mut self, idx: usize) -> Option<&mut Object> {
         self.objects.get_mut(idx)
     }
 
@@ -137,9 +136,9 @@ mod tests {
             .with_color(Color::new(0.8, 1.0, 0.6))
             .with_diffuse(0.7)
             .with_specular(0.2);
-        let s1 = Sphere::new().with_material(m1);
+        let s1 = Object::new_sphere().with_material(m1);
         let t2 = Transformation::new_transform().scaling(0.5, 0.5, 0.5);
-        let s2 = Sphere::new().with_transform(t2);
+        let s2 = Object::new_sphere().with_transform(t2);
         let w = World::default();
         assert!(w.lights.contains(&light));
         assert!(w.objects.contains(&s1));
@@ -218,9 +217,9 @@ mod tests {
     #[test]
     fn shade_hit_with_intersection_in_shadow() {
         let l = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
-        let s1 = Sphere::new();
+        let s1 = Object::new_sphere();
         let t2 = Transformation::new_transform().translation(0.0, 0.0, 10.0);
-        let s2 = Sphere::new().with_transform(t2);
+        let s2 = Object::new_sphere().with_transform(t2);
         let w = World::new()
             .with_lights(vec![l])
             .with_objects(vec![s1, s2.clone()]);
