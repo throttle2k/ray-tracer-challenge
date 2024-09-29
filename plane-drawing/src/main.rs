@@ -49,17 +49,25 @@ fn main() {
         .with_material(left_m)
         .with_transform(left_t);
 
+    let wall1_t = Transformation::new_transform()
+        .rotation_x(PI / 2.0)
+        .translation(0.0, 0.0, 5.0);
+    let wall1_m = Material::new().with_color(Color::red());
+    let wall1 = Object::new_plane()
+        .with_transform(wall1_t)
+        .with_material(wall1_m);
+
     let light_source = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
 
     let camera_t = Transformation::view_transform(
-        Point::new(0.0, 1.5, -5.0),
+        Point::new(0.0, 5.5, -15.0),
         Point::new(0.0, 1.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
     );
     let camera = Camera::new(300, 150, PI / 3.0).with_transform(camera_t);
 
     let world = World::new()
-        .with_objects(vec![floor, middle, right, left])
+        .with_objects(vec![floor, middle, right, left, wall1])
         .with_lights(vec![light_source]);
 
     let canvas = camera.render(world);
