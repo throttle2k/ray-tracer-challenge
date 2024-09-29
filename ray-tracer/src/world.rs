@@ -66,7 +66,7 @@ impl World {
         let mut xs = Intersections::new();
         self.objects
             .iter()
-            .for_each(|obj| xs.push_all(obj.intersect(&ray)));
+            .for_each(|obj| xs.push_all(obj.intersects(&ray)));
         xs.sort_by(|i1, i2| i1.t.total_cmp(&i2.t));
         xs
     }

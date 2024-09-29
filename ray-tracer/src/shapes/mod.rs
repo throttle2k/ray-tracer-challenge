@@ -1,12 +1,13 @@
+mod sphere;
 mod test_shape;
 
+use sphere::Sphere;
 use test_shape::TestShape;
 
 use crate::{
     intersections::{Intersection, Intersections},
     materials::Material,
     rays::Ray,
-    sphere::Sphere,
     transformations::Transformation,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -113,7 +114,7 @@ impl Object {
         }
     }
 
-    pub fn intersect<'a>(&'a self, r: &Ray) -> Intersections<'a> {
+    pub fn intersects<'a>(&'a self, r: &Ray) -> Intersections<'a> {
         if let Some(t) = self.transform.inverse() {
             let ray = r.transform(t);
             self.shape.intersect(self, ray)

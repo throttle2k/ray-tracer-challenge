@@ -7,7 +7,6 @@ pub mod matrix;
 pub mod ppm;
 pub mod rays;
 pub mod shapes;
-pub mod sphere;
 pub mod transformations;
 pub mod tuples;
 pub mod world;
