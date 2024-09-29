@@ -2,7 +2,7 @@ use std::{f64::consts::PI, fs, usize};
 
 use colo_rs::colors::Color;
 use ray_tracer::{
-    canvas::Canvas, points::Point, ppm::PPM, transformations::Transformation, tuples::Tuple,
+    canvas::Canvas, ppm::PPM, transformations::Transformation, tuples::points::Point, tuples::Tuple,
 };
 
 fn main() {

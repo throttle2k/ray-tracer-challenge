@@ -1,4 +1,7 @@
-use crate::{lights::PointLight, points::Point, vectors::Vector};
+use crate::{
+    lights::PointLight,
+    tuples::{points::Point, vectors::Vector},
+};
 use colo_rs::colors::Color;
 
 #[derive(Debug, PartialEq, Clone)]

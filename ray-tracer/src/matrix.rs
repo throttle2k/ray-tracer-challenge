@@ -201,7 +201,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::points::Point;
+    use crate::tuples::points::Point;
 
     use super::*;
 

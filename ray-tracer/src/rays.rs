@@ -1,10 +1,10 @@
 use crate::{
     intersections::{Intersection, Intersections},
-    points::Point,
     sphere::Sphere,
     transformations::Transformation,
+    tuples::points::Point,
+    tuples::vectors::Vector,
     tuples::Tuple,
-    vectors::Vector,
 };
 
 #[derive(Debug, Clone, Copy)]

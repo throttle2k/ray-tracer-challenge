@@ -1,6 +1,6 @@
 use colo_rs::colors::Color;
 
-use crate::points::Point;
+use crate::tuples::points::Point;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PointLight {

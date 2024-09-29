@@ -2,8 +2,9 @@ use std::{f64::consts::PI, fs};
 
 use colo_rs::colors::Color;
 use ray_tracer::{
-    camera::Camera, lights::PointLight, materials::Material, points::Point, ppm::PPM,
-    sphere::Sphere, transformations::Transformation, tuples::Tuple, vectors::Vector, world::World,
+    camera::Camera, lights::PointLight, materials::Material, ppm::PPM, sphere::Sphere,
+    transformations::Transformation, tuples::points::Point, tuples::vectors::Vector, tuples::Tuple,
+    world::World,
 };
 
 fn main() {

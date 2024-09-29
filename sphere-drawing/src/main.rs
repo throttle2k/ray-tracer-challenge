@@ -2,8 +2,8 @@ use std::{fs, sync::Mutex};
 
 use colo_rs::colors::Color;
 use ray_tracer::{
-    canvas::Canvas, lights::PointLight, materials::Material, points::Point, ppm::PPM, rays::Ray,
-    sphere::Sphere, tuples::Tuple,
+    canvas::Canvas, lights::PointLight, materials::Material, ppm::PPM, rays::Ray, sphere::Sphere,
+    tuples::points::Point, tuples::Tuple,
 };
 use rayon::iter::{ParallelBridge, ParallelIterator};
 

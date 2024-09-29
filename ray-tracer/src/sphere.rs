@@ -1,6 +1,9 @@
 use crate::{
-    intersections::Intersections, materials::Material, points::Point, rays::Ray,
-    transformations::Transformation, tuples::Tuple, vectors::Vector,
+    intersections::Intersections,
+    materials::Material,
+    rays::Ray,
+    transformations::Transformation,
+    tuples::{points::Point, vectors::Vector, Tuple},
 };
 
 #[derive(Debug, Clone)]

@@ -1,4 +1,4 @@
-use crate::{matrix::Matrix, points::Point, tuples::Tuple, vectors::Vector};
+use crate::{matrix::Matrix, tuples::points::Point, tuples::vectors::Vector, tuples::Tuple};
 
 pub type Transformation = Matrix;
 
@@ -92,7 +92,7 @@ impl Transformation {
 mod tests {
     use std::f64::consts::PI;
 
-    use crate::{points::Point, tuples::Tuple, vectors::Vector};
+    use crate::{tuples::points::Point, tuples::vectors::Vector, tuples::Tuple};
 
     use super::*;
 

@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut, Index};
 
 use approx_eq::EPSILON;
 
-use crate::{points::Point, rays::Ray, sphere::Sphere, vectors::Vector};
+use crate::{rays::Ray, sphere::Sphere, tuples::points::Point, tuples::vectors::Vector};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Intersection<'a> {

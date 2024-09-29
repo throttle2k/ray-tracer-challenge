@@ -1,7 +1,9 @@
 use std::fs::{self};
 
 use colo_rs::colors::Color;
-use ray_tracer::{canvas::Canvas, points::Point, ppm::PPM, tuples::Tuple, vectors::Vector};
+use ray_tracer::{
+    canvas::Canvas, ppm::PPM, tuples::points::Point, tuples::vectors::Vector, tuples::Tuple,
+};
 
 struct Projectile {
     position: Point,

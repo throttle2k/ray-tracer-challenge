@@ -4,10 +4,10 @@ use crate::{
     intersections::{Computation, Intersections},
     lights::PointLight,
     materials::Material,
-    points::Point,
     rays::Ray,
     sphere::Sphere,
     transformations::Transformation,
+    tuples::points::Point,
     tuples::Tuple,
 };
 
@@ -119,7 +119,7 @@ impl World {
 #[cfg(test)]
 mod tests {
 
-    use crate::{intersections::Intersection, vectors::Vector};
+    use crate::{intersections::Intersection, tuples::vectors::Vector};
 
     use super::*;
 

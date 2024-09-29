@@ -3,8 +3,8 @@ use std::sync::Mutex;
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
 use crate::{
-    canvas::Canvas, points::Point, rays::Ray, transformations::Transformation, tuples::Tuple,
-    world::World,
+    canvas::Canvas, rays::Ray, transformations::Transformation, tuples::points::Point,
+    tuples::Tuple, world::World,
 };
 
 pub struct Camera {
@@ -72,6 +72,10 @@ impl Camera {
         let image = image_mutex.lock().unwrap();
         image.clone()
     }
+
+    pub fn field_of_view(&self) -> f64 {
+        self.field_of_view
+    }
 }
 
 #[cfg(test)]
@@ -81,7 +85,7 @@ mod tests {
     use approx_eq::ApproxEq;
     use colo_rs::colors::Color;
 
-    use crate::{matrix::Matrix, points::Point, tuples::Tuple, vectors::Vector};
+    use crate::{matrix::Matrix, tuples::vectors::Vector};
 
     use super::*;
 

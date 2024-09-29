@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 
 use approx_eq::ApproxEq;
 
-use crate::{tuples::Tuple, vectors::Vector};
+use super::{vectors::Vector, Tuple};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Point {

@@ -1,3 +1,6 @@
+pub mod points;
+pub mod vectors;
+
 pub trait Tuple {
     fn new(x: f64, y: f64, z: f64) -> Self;
     fn x(&self) -> f64;
@@ -10,9 +13,11 @@ pub trait Tuple {
 
 #[cfg(test)]
 mod tests {
-    use crate::tuples::Tuple;
 
-    use crate::{points::Point, vectors::Vector};
+    use points::Point;
+    use vectors::Vector;
+
+    use super::*;
 
     #[test]
     fn a_point_is_a_tuple_with_w_1() {
