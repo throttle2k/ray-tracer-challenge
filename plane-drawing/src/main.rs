@@ -64,7 +64,7 @@ fn main() {
         Point::new(0.0, 1.0, 0.0),
         Vector::new(0.0, 1.0, 0.0),
     );
-    let camera = Camera::new(300, 150, PI / 3.0).with_transform(camera_t);
+    let camera = Camera::new(500, 250, PI / 3.0).with_transform(camera_t);
 
     let world = World::new()
         .with_objects(vec![floor, middle, right, left, wall1])

@@ -82,6 +82,7 @@ impl World {
                     comps.eye_v,
                     comps.normal_v,
                     in_shadow,
+                    &comps.object,
                 )
             })
             .sum()

@@ -1,6 +1,6 @@
 use std::{
     iter::Sum,
-    ops::{Add, Mul, Sub},
+    ops::{Add, Div, Mul, Sub},
 };
 
 use approx_eq::ApproxEq;
@@ -31,6 +31,10 @@ impl Color {
 
     pub fn blue() -> Self {
         Self::new(0.0, 0.0, 1.0)
+    }
+
+    pub fn white() -> Self {
+        Self::new(1.0, 1.0, 1.0)
     }
 
     pub fn normalize(&mut self, min: f64, max: f64) {
@@ -85,6 +89,14 @@ impl Mul<f64> for Color {
 
     fn mul(self, rhs: f64) -> Self::Output {
         Color::new(self.r * rhs, self.g * rhs, self.b * rhs)
+    }
+}
+
+impl Div<f64> for Color {
+    type Output = Color;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Color::new(self.r / rhs, self.g / rhs, self.b / rhs)
     }
 }
 

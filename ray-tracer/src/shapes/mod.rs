@@ -52,34 +52,17 @@ impl Shape {
 #[derive(Debug, Clone)]
 pub struct Object {
     transform: Transformation,
-    transform_inverse: Option<Transformation>,
-    transform_inverse_transpose: Option<Transformation>,
     material: Material,
     shape: Shape,
 }
 
 impl Object {
     fn new(shape: Shape) -> Self {
-        let transform = Transformation::new_transform();
-        let (transform_inverse, transform_inverse_transpose) = Self::prepare_transform(&transform);
-
         Self {
             transform: Transformation::new_transform(),
             material: Material::new(),
             shape,
-            transform_inverse,
-            transform_inverse_transpose,
         }
-    }
-
-    fn prepare_transform(t: &Transformation) -> (Option<Transformation>, Option<Transformation>) {
-        let transform_inverse = t.inverse();
-        let transform_inverse_transpose = if let Some(ti) = &transform_inverse {
-            Some(ti.transpose())
-        } else {
-            None
-        };
-        (transform_inverse, transform_inverse_transpose)
     }
 
     pub fn new_sphere() -> Self {
@@ -95,10 +78,7 @@ impl Object {
     }
 
     pub fn with_transform(mut self, transform: Transformation) -> Self {
-        let (transform_inverse, transform_inverse_transpose) = Self::prepare_transform(&transform);
         self.transform = transform;
-        self.transform_inverse = transform_inverse;
-        self.transform_inverse_transpose = transform_inverse_transpose;
         self
     }
 
@@ -116,10 +96,10 @@ impl Object {
     }
 
     pub fn normal_at(&self, world_point: Point) -> Vector {
-        if let Some(m) = &self.transform_inverse {
+        if let Some(m) = self.transform.inverse() {
             let object_point = m * &world_point;
             let object_normal = self.shape.normal_at(object_point);
-            let transform_inverse_transpose = self.transform_inverse_transpose.as_ref().unwrap();
+            let transform_inverse_transpose = self.transform.inverse_transposed().unwrap();
             let world_normal = transform_inverse_transpose * &object_normal;
             world_normal.normalize()
         } else {
@@ -128,11 +108,15 @@ impl Object {
     }
 
     pub fn intersects<'a>(&'a self, r: &Ray) -> Intersections<'a> {
+        let ray = r.transform(self.transform.inverse().unwrap());
+        self.shape.intersect(self, ray)
+    }
+
+    pub fn to_object_space(&self, world_point: &Point) -> Option<Point> {
         if let Some(t) = self.transform.inverse() {
-            let ray = r.transform(t);
-            self.shape.intersect(self, ray)
+            Some(t * world_point)
         } else {
-            Intersections::new()
+            None
         }
     }
 }
@@ -155,7 +139,7 @@ mod tests {
     #[test]
     fn default_transformation() {
         let s = Object::new_test_shape();
-        assert_eq!(s.transform, Matrix::identity(4));
+        assert_eq!(s.transform.matrix, Matrix::identity(4));
     }
 
     #[test]

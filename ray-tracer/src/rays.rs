@@ -1,5 +1,5 @@
 use crate::{
-    transformations::Transformation,
+    matrix::Matrix,
     tuples::{points::Point, vectors::Vector},
 };
 
@@ -18,12 +18,10 @@ impl Ray {
         self.origin + self.direction * distance
     }
 
-    pub fn transform(&self, m: Transformation) -> Self {
-        let new_origin = &m * &self.origin;
-        let new_direction = &m * &self.direction;
+    pub fn transform(&self, t: &Matrix) -> Self {
         Self {
-            origin: new_origin,
-            direction: new_direction,
+            origin: t * &self.origin,
+            direction: t * &self.direction,
         }
     }
 }
@@ -32,8 +30,8 @@ impl Ray {
 mod tests {
     use crate::{
         intersections::{Intersection, Intersections},
-        matrix::Matrix,
         shapes::Object,
+        transformations::Transformation,
         tuples::Tuple,
     };
 
@@ -139,8 +137,8 @@ mod tests {
     #[test]
     fn translating_a_ray() {
         let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::y_norm());
-        let m = Matrix::new_transform().translation(3.0, 4.0, 5.0);
-        let r2 = r.transform(m);
+        let m = Transformation::new_transform().translation(3.0, 4.0, 5.0);
+        let r2 = r.transform(&m.matrix);
         assert_eq!(r2.origin, Point::new(4.0, 6.0, 8.0));
         assert_eq!(r2.direction, Vector::new(0.0, 1.0, 0.0));
     }
@@ -148,8 +146,8 @@ mod tests {
     #[test]
     fn scaling_a_ray() {
         let r = Ray::new(Point::new(1.0, 2.0, 3.0), Vector::y_norm());
-        let m = Matrix::new_transform().scaling(2.0, 3.0, 4.0);
-        let r2 = r.transform(m);
+        let m = Transformation::new_transform().scaling(2.0, 3.0, 4.0);
+        let r2 = r.transform(&m.matrix);
         assert_eq!(r2.origin, Point::new(2.0, 6.0, 12.0));
         assert_eq!(r2.direction, Vector::new(0.0, 3.0, 0.0));
     }

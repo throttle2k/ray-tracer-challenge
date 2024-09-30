@@ -1,5 +1,7 @@
 use crate::{
     lights::PointLight,
+    patterns::Pattern,
+    shapes::Object,
     tuples::{points::Point, vectors::Vector},
 };
 use colo_rs::colors::Color;
@@ -11,6 +13,7 @@ pub struct Material {
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
+    pub pattern: Option<Pattern>,
 }
 
 impl Material {
@@ -21,6 +24,7 @@ impl Material {
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.0,
+            pattern: None,
         }
     }
 
@@ -49,6 +53,11 @@ impl Material {
         self
     }
 
+    pub fn with_pattern(mut self, pattern: Pattern) -> Self {
+        self.pattern = Some(pattern);
+        self
+    }
+
     pub fn lighting(
         &self,
         light: PointLight,
@@ -56,8 +65,14 @@ impl Material {
         eye: Vector,
         normal: Vector,
         in_shadow: bool,
+        object: &Object,
     ) -> Color {
-        let effective_color = &self.color * &light.intensity;
+        let color = if let Some(pattern) = &self.pattern {
+            pattern.pattern_at_object(object, position)
+        } else {
+            self.color
+        };
+        let effective_color = &color * &light.intensity;
         let ambient = effective_color * self.ambient;
         let (diffuse, specular) = if in_shadow {
             (Color::black(), Color::black())
@@ -107,7 +122,14 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(light, position, eyev, normalv, in_shadow);
+        let result = m.lighting(
+            light,
+            position,
+            eyev,
+            normalv,
+            in_shadow,
+            &Object::new_test_shape(),
+        );
         assert_eq!(result, Color::new(1.9, 1.9, 1.9));
     }
 
@@ -119,7 +141,14 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(light, position, eyev, normalv, in_shadow);
+        let result = m.lighting(
+            light,
+            position,
+            eyev,
+            normalv,
+            in_shadow,
+            &Object::new_test_shape(),
+        );
         assert_eq!(result, Color::new(1.0, 1.0, 1.0));
     }
 
@@ -131,7 +160,14 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(light, position, eyev, normalv, in_shadow);
+        let result = m.lighting(
+            light,
+            position,
+            eyev,
+            normalv,
+            in_shadow,
+            &Object::new_test_shape(),
+        );
         assert_eq!(result, Color::new(0.7364, 0.7364, 0.7364));
     }
 
@@ -143,7 +179,14 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(light, position, eyev, normalv, in_shadow);
+        let result = m.lighting(
+            light,
+            position,
+            eyev,
+            normalv,
+            in_shadow,
+            &Object::new_test_shape(),
+        );
         assert_eq!(result, Color::new(1.6364, 1.6364, 1.6364));
     }
 
@@ -155,7 +198,14 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, 10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(light, position, eyev, normalv, in_shadow);
+        let result = m.lighting(
+            light,
+            position,
+            eyev,
+            normalv,
+            in_shadow,
+            &Object::new_test_shape(),
+        );
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 
@@ -167,7 +217,47 @@ mod tests {
         let normal_v = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = true;
-        let result = m.lighting(light, position, eye_v, normal_v, in_shadow);
+        let result = m.lighting(
+            light,
+            position,
+            eye_v,
+            normal_v,
+            in_shadow,
+            &Object::new_test_shape(),
+        );
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
+    }
+
+    #[test]
+    fn lighting_with_a_pattern_applied() {
+        let m = Material::new()
+            .with_pattern(Pattern::new_striped_pattern(
+                Pattern::new_solid_pattern(Color::white()),
+                Pattern::new_solid_pattern(Color::black()),
+            ))
+            .with_ambient(1.0)
+            .with_diffuse(0.0)
+            .with_specular(0.0);
+        let eye_v = Vector::new(0.0, 0.0, -1.0);
+        let normal_v = Vector::new(0.0, 0.0, -1.0);
+        let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::white());
+        let c1 = m.lighting(
+            light,
+            Point::new(0.9, 0.0, 0.0),
+            eye_v,
+            normal_v,
+            false,
+            &Object::new_test_shape(),
+        );
+        let c2 = m.lighting(
+            light,
+            Point::new(1.1, 0.0, 0.0),
+            eye_v,
+            normal_v,
+            false,
+            &Object::new_test_shape(),
+        );
+        assert_eq!(c1, Color::white());
+        assert_eq!(c2, Color::black());
     }
 }

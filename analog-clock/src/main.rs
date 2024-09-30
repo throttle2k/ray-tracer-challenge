@@ -13,7 +13,7 @@ fn main() {
         let t = Transformation::new_transform()
             .rotation_z(rad * i as f64)
             .translation(150.0, 150.0, 0.0);
-        let h = &t * &twelve;
+        let h = &t.matrix * &twelve;
         canvas.write_pixel(h.x().round() as usize, h.y().round() as usize, Color::red());
     }
     let ppm = PPM::from(canvas);

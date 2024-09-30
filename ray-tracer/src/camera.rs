@@ -39,7 +39,7 @@ impl Camera {
         }
     }
 
-    pub fn with_transform(mut self, t: crate::matrix::Matrix) -> Self {
+    pub fn with_transform(mut self, t: Transformation) -> Self {
         self.transform = t;
         self
     }
@@ -49,8 +49,8 @@ impl Camera {
         let y_offset = (py + 0.5) * self.pixel_size;
         let world_x = self.half_width - x_offset;
         let world_y = self.half_height - y_offset;
-        let pixel = &self.transform.inverse().unwrap() * &Point::new(world_x, world_y, -1.0);
-        let origin = &self.transform.inverse().unwrap() * &Point::zero();
+        let pixel = self.transform.inverse().unwrap() * &Point::new(world_x, world_y, -1.0);
+        let origin = self.transform.inverse().unwrap() * &Point::zero();
         let direction = (pixel - origin).normalize();
         Ray::new(origin, direction)
     }
@@ -98,7 +98,7 @@ mod tests {
         assert_eq!(c.h_size, 160);
         assert_eq!(c.v_size, 120);
         assert_eq!(c.field_of_view, PI / 2.0);
-        assert_eq!(c.transform, Matrix::identity(4));
+        assert_eq!(c.transform.matrix, Matrix::identity(4));
     }
 
     #[test]
