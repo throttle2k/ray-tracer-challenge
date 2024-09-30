@@ -165,6 +165,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "reflections-drawing"
+version = "0.1.0"
+dependencies = [
+ "colo-rs",
+ "ray-tracer",
+]
+
+[[package]]
 name = "sphere-drawing"
 version = "0.1.0"
 dependencies = [

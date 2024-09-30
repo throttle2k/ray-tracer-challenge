@@ -65,7 +65,7 @@ impl Camera {
         let cross = ys.flat_map(|y| xs.clone().map(move |x| (x, y)));
         cross.par_bridge().for_each(|(x, y)| {
             let ray = self.ray_for_pixel(x as f64, y as f64);
-            let color = w.color_at(ray);
+            let color = w.color_at(ray, 5);
             let mut canvas = image_mutex.lock().unwrap();
             canvas.write_pixel(x, y, color);
         });

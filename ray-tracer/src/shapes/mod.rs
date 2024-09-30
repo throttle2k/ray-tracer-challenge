@@ -49,7 +49,7 @@ impl Shape {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Object {
     transform: Transformation,
     material: Material,
@@ -67,6 +67,14 @@ impl Object {
 
     pub fn new_sphere() -> Self {
         Self::new(Shape::Sphere)
+    }
+
+    pub fn new_glass_sphere() -> Self {
+        Self::new_sphere().with_material(
+            Material::new()
+                .with_transparency(1.0)
+                .with_refractive_index(1.5),
+        )
     }
 
     pub fn new_test_shape() -> Self {
@@ -118,12 +126,6 @@ impl Object {
         } else {
             None
         }
-    }
-}
-
-impl PartialEq for Object {
-    fn eq(&self, other: &Self) -> bool {
-        self.shape == other.shape
     }
 }
 

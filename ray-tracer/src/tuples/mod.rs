@@ -46,10 +46,10 @@ mod tests {
     }
 
     #[test]
-    fn subtracting_a_vector_from_a_point_returns_vector() {
+    fn subtracting_a_vector_from_a_point_returns_point() {
         let point = Point::new(3.0, 2.0, 1.0);
         let vector = Vector::new(5.0, 6.0, 7.0);
-        assert_eq!(point - vector, Vector::new(-2.0, -4.0, -6.0));
+        assert_eq!(point - vector, Point::new(-2.0, -4.0, -6.0));
     }
 
     #[test]

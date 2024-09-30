@@ -84,9 +84,9 @@ impl Sub<Point> for Point {
 }
 
 impl Sub<Vector> for Point {
-    type Output = Vector;
+    type Output = Point;
 
     fn sub(self, rhs: Vector) -> Self::Output {
-        Vector::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z())
+        Point::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z())
     }
 }
