@@ -118,8 +118,13 @@ impl World {
             let distance = v.magnitude();
             let direction = v.normalize();
             let shadow_ray = Ray::new(p, direction);
-            let xs = self.intersect_world(shadow_ray);
-            let h = xs.hit();
+            let xs: Intersections = self.intersect_world(shadow_ray);
+            let shadowing_xs: Intersections = xs
+                .iter()
+                .filter(|i| i.object.material().cast_shadows == true)
+                .collect();
+
+            let h = shadowing_xs.hit();
             if let Some(h) = h {
                 if h.t < distance {
                     return true;
@@ -253,6 +258,20 @@ mod tests {
     fn there_is_no_shadow_when_an_object_is_behind_the_point() {
         let w = World::default();
         let p = Point::new(-2.0, 2.0, -2.0);
+        assert_eq!(w.is_shadowed(p), false);
+    }
+
+    #[test]
+    fn a_material_can_opt_out_shadow() {
+        let object_without_shadow = Object::new_plane()
+            .with_material(Material::new().with_cast_shadows(false))
+            .with_transform(Transformation::new_transform().translation(0.0, 1.0, 0.0));
+        let target_object = Object::new_plane();
+        let light = PointLight::new(Point::new(0.0, 10.0, 0.0), Color::white());
+        let w = World::new()
+            .with_objects(vec![object_without_shadow, target_object])
+            .with_lights(vec![light]);
+        let p = Point::new(0.0, 0.0, 0.0);
         assert_eq!(w.is_shadowed(p), false);
     }
 

@@ -142,6 +142,14 @@ impl<'a> Intersections<'a> {
     }
 }
 
+impl<'a> FromIterator<&'a Intersection<'a>> for Intersections<'a> {
+    fn from_iter<T: IntoIterator<Item = &'a Intersection<'a>>>(iter: T) -> Self {
+        let mut xs = Intersections::new();
+        iter.into_iter().for_each(|i| xs.push(*i));
+        xs
+    }
+}
+
 impl<'a> Deref for Intersections<'a> {
     type Target = Vec<Intersection<'a>>;
 

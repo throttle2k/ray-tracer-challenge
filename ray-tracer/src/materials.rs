@@ -17,6 +17,7 @@ pub struct Material {
     pub reflective: f64,
     pub transparency: f64,
     pub refractive_index: f64,
+    pub cast_shadows: bool,
 }
 
 impl Material {
@@ -31,6 +32,7 @@ impl Material {
             reflective: 0.0,
             transparency: 0.0,
             refractive_index: 1.0,
+            cast_shadows: true,
         }
     }
 
@@ -76,6 +78,11 @@ impl Material {
 
     pub fn with_refractive_index(mut self, refractive_index: f64) -> Self {
         self.refractive_index = refractive_index;
+        self
+    }
+
+    pub fn with_cast_shadows(mut self, cast_shadow: bool) -> Self {
+        self.cast_shadows = cast_shadow;
         self
     }
 
