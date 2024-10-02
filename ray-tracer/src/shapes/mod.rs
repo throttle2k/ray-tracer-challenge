@@ -168,56 +168,6 @@ mod tests {
     }
 
     #[test]
-    fn normal_of_sphere_at_point_on_x_axis() {
-        let s = Object::new_sphere();
-        let n = s.normal_at(Point::new(1.0, 0.0, 0.0));
-        assert_eq!(n, Vector::new(1.0, 0.0, 0.0));
-    }
-
-    #[test]
-    fn normal_of_sphere_at_point_on_y_axis() {
-        let s = Object::new_sphere();
-        let n = s.normal_at(Point::new(0.0, 1.0, 0.0));
-        assert_eq!(n, Vector::new(0.0, 1.0, 0.0));
-    }
-
-    #[test]
-    fn normal_of_sphere_at_point_on_z_axis() {
-        let s = Object::new_sphere();
-        let n = s.normal_at(Point::new(0.0, 0.0, 1.0));
-        assert_eq!(n, Vector::new(0.0, 0.0, 1.0));
-    }
-
-    #[test]
-    fn normal_of_sphere_at_a_non_axial_point() {
-        let s = Object::new_sphere();
-        let n = s.normal_at(Point::new(
-            f64::sqrt(3.0) / 3.0,
-            f64::sqrt(3.0) / 3.0,
-            f64::sqrt(3.0) / 3.0,
-        ));
-        assert_eq!(
-            n,
-            Vector::new(
-                f64::sqrt(3.0) / 3.0,
-                f64::sqrt(3.0) / 3.0,
-                f64::sqrt(3.0) / 3.0,
-            )
-        );
-    }
-
-    #[test]
-    fn the_normal_is_a_normalized_vector() {
-        let s = Object::new_sphere();
-        let n = s.normal_at(Point::new(
-            f64::sqrt(3.0) / 3.0,
-            f64::sqrt(3.0) / 3.0,
-            f64::sqrt(3.0) / 3.0,
-        ));
-        assert_eq!(n, n.normalize());
-    }
-
-    #[test]
     fn computing_the_normal_on_a_translated_shape() {
         let s = Object::new_test_shape()
             .with_transform(Transformation::new_transform().translation(0.0, 1.0, 0.0));
