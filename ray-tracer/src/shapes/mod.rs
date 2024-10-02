@@ -1,7 +1,9 @@
+mod cube;
 mod plane;
 mod sphere;
 mod test_shape;
 
+use cube::Cube;
 use plane::Plane;
 use sphere::Sphere;
 use test_shape::TestShape;
@@ -19,6 +21,7 @@ pub enum Shape {
     Sphere,
     TestShape,
     Plane,
+    Cube,
 }
 
 impl Shape {
@@ -27,6 +30,7 @@ impl Shape {
             Shape::TestShape => TestShape::normal_at(object_point),
             Shape::Sphere => Sphere::normal_at(object_point),
             Shape::Plane => Plane::normal_at(object_point),
+            Shape::Cube => Cube::normal_at(object_point),
         }
     }
 
@@ -41,6 +45,11 @@ impl Shape {
             }
             Shape::Plane => {
                 let xs = Plane::intersects(ray);
+                xs.iter()
+                    .for_each(|x| intersections.push(Intersection::new(*x, object)));
+            }
+            Shape::Cube => {
+                let xs = Cube::intersects(ray);
                 xs.iter()
                     .for_each(|x| intersections.push(Intersection::new(*x, object)));
             }
@@ -83,6 +92,10 @@ impl Object {
 
     pub fn new_plane() -> Self {
         Self::new(Shape::Plane)
+    }
+
+    pub fn new_cube() -> Self {
+        Self::new(Shape::Cube)
     }
 
     pub fn with_transform(mut self, transform: Transformation) -> Self {
