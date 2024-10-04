@@ -8,3 +8,6 @@ colo-rs = { workspace = true }
 approx-eq = { workspace = true }
 rayon = "1.10.0"
 perlin_noise = "1.0.1"
+
+[dev-dependencies]
+yare = "3.0.0"

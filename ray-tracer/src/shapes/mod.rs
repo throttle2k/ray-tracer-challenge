@@ -1,9 +1,13 @@
+mod cone;
 mod cube;
+mod cylinder;
 mod plane;
 mod sphere;
 mod test_shape;
 
+use cone::Cone;
 use cube::Cube;
+use cylinder::Cylinder;
 use plane::Plane;
 use sphere::Sphere;
 use test_shape::TestShape;
@@ -22,6 +26,8 @@ pub enum Shape {
     TestShape,
     Plane,
     Cube,
+    Cylinder(Cylinder),
+    Cone(Cone),
 }
 
 impl Shape {
@@ -31,6 +37,8 @@ impl Shape {
             Shape::Sphere => Sphere::normal_at(object_point),
             Shape::Plane => Plane::normal_at(object_point),
             Shape::Cube => Cube::normal_at(object_point),
+            Shape::Cylinder(cyl) => cyl.normal_at(object_point),
+            Shape::Cone(cone) => cone.normal_at(object_point),
         }
     }
 
@@ -50,6 +58,16 @@ impl Shape {
             }
             Shape::Cube => {
                 let xs = Cube::intersects(ray);
+                xs.iter()
+                    .for_each(|x| intersections.push(Intersection::new(*x, object)));
+            }
+            Shape::Cylinder(cyl) => {
+                let xs = cyl.intersects(ray);
+                xs.iter()
+                    .for_each(|x| intersections.push(Intersection::new(*x, object)));
+            }
+            Shape::Cone(cone) => {
+                let xs = cone.intersects(ray);
                 xs.iter()
                     .for_each(|x| intersections.push(Intersection::new(*x, object)));
             }
@@ -96,6 +114,14 @@ impl Object {
 
     pub fn new_cube() -> Self {
         Self::new(Shape::Cube)
+    }
+
+    pub fn new_cylinder(cyl: Cylinder) -> Self {
+        Self::new(Shape::Cylinder(cyl))
+    }
+
+    pub fn new_cone(cone: Cone) -> Self {
+        Self::new(Shape::Cone(cone))
     }
 
     pub fn with_transform(mut self, transform: Transformation) -> Self {
