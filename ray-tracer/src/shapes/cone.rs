@@ -47,21 +47,28 @@ impl Cone {
     }
 
     pub fn normal_at(&self, object_point: Point) -> Vector {
-        let dist = object_point.x().powi(2) + object_point.z().powi(2);
+        let x2 = object_point.x().powi(2);
+        let y2 = object_point.y().powi(2);
+        let z2 = object_point.z().powi(2);
+
+        let dist = x2 + z2;
 
         if (self.cap == ConeCap::Both || self.cap == ConeCap::TopCap)
-            && dist < 1.0
+            && dist <= y2
             && object_point.y() >= self.maximum - EPSILON
         {
             Vector::y_norm()
         } else if (self.cap == ConeCap::Both || self.cap == ConeCap::BottomCap)
-            && dist < 1.0
+            && dist <= y2
             && object_point.y() <= self.minimum + EPSILON
         {
             Vector::y_norm() * -1.0
         } else {
-            let y = (object_point.x().powi(2) + object_point.z().powi(2)).sqrt();
-            let y = if object_point.y() > 0.0 { -y } else { y };
+            let y = if object_point.y() > 0.0 {
+                -f64::sqrt(dist)
+            } else {
+                f64::sqrt(dist)
+            };
 
             Vector::new(object_point.x(), y, object_point.z())
         }
@@ -104,25 +111,25 @@ impl Cone {
         xs
     }
 
-    fn check_cap(r: Ray, t: f64) -> bool {
+    fn check_cap(r: Ray, t: f64, radius: f64) -> bool {
         let x = r.origin.x() + t * r.direction.x();
         let z = r.origin.z() + t * r.direction.z();
-        x.powi(2) + z.powi(2) <= 1.0
+        x.powi(2) + z.powi(2) <= radius.powi(2)
     }
 
     fn intersects_caps(&self, r: Ray, xs: &mut Vec<f64>) {
-        if self.cap == ConeCap::Uncapped {
+        if self.cap == ConeCap::Uncapped || r.direction.y().approx_eq(0.0) {
             return;
         }
         if self.cap == ConeCap::Both || self.cap == ConeCap::BottomCap {
             let t = (self.minimum - r.origin.y()) / r.direction.y();
-            if Cone::check_cap(r, t) {
+            if Cone::check_cap(r, t, self.minimum) {
                 xs.push(t);
             }
         }
         if self.cap == ConeCap::Both || self.cap == ConeCap::TopCap {
             let t = (self.maximum - r.origin.y()) / r.direction.y();
-            if Cone::check_cap(r, t) {
+            if Cone::check_cap(r, t, self.maximum) {
                 xs.push(t);
             }
         }
@@ -203,7 +210,7 @@ mod tests {
 
     #[parameterized(
         ray_outside_cone = {Point::new(0.0, 0.0, -5.0), Vector::y_norm(), 0},
-        ray_oblique = {Point::new(0.0, 0.0, -0.25), Vector::new(0.0, 1.0, 1.0), 3},
+        ray_oblique = {Point::new(0.0, 0.0, -0.25), Vector::new(0.0, 1.0, 1.0), 2},
         ray_vertical_close_to_origin = {Point::new(0.0, 0.0, -0.25), Vector::y_norm(), 4},
     )]
     fn intersecting_the_caps_of_a_closed_cone(point: Point, direction: Vector, count: usize) {
@@ -219,7 +226,7 @@ mod tests {
 
     #[parameterized(
         ray_outside_cone = {Point::new(0.0, 0.0, -5.0), Vector::y_norm(), 0},
-        ray_oblique = {Point::new(0.0, 0.0, -0.25), Vector::new(0.0, 1.0, 1.0), 2},
+        ray_oblique = {Point::new(0.0, 0.0, -0.25), Vector::new(0.0, 1.0, 1.0), 1},
         ray_vertical_close_to_origin = {Point::new(0.0, 0.0, -0.25), Vector::y_norm(), 3},
     )]
     fn intersecting_the_cap_of_a_bottom_closed_cone(point: Point, direction: Vector, count: usize) {

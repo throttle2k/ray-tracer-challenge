@@ -1,0 +1,8 @@
+[package]
+name = "cones-drawing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+colo-rs = { workspace = true }
+ray-tracer = { workspace = true }

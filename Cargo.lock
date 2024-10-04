@@ -37,6 +37,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cones-drawing"
+version = "0.1.0"
+dependencies = [
+ "colo-rs",
+ "ray-tracer",
+]
+
+[[package]]
 name = "crossbeam-deque"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -86,6 +94,14 @@ name = "libc"
 version = "0.2.159"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "561d97a539a36e26a9a5fad1ea11a3039a67714694aaa379433e580854bc3dc5"
+
+[[package]]
+name = "open-cylinders-drawing"
+version = "0.1.0"
+dependencies = [
+ "colo-rs",
+ "ray-tracer",
+]
 
 [[package]]
 name = "patterns-drawing"

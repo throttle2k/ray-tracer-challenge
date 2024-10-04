@@ -76,7 +76,8 @@ impl World {
         self.lights()
             .iter()
             .map(|light| {
-                let in_shadow = self.is_shadowed(comps.over_point);
+                let in_shadow =
+                    comps.object.material().receive_shadows && self.is_shadowed(comps.over_point);
                 let surface = comps.object.material().lighting(
                     *light,
                     comps.over_point,

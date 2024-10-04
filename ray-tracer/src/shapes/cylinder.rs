@@ -72,7 +72,6 @@ impl Cylinder {
             let b = 2.0 * r.origin.x() * r.direction.x() + 2.0 * r.origin.z() * r.direction.z();
             let c = r.origin.x().powi(2) + r.origin.z().powi(2) - 1.0;
             let discriminant = b.powi(2) - 4.0 * a * c;
-            dbg!(discriminant);
 
             if discriminant < 0.0 {
                 Vec::new()

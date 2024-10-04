@@ -1,13 +1,13 @@
 mod cone;
-mod cube;
-mod cylinder;
+pub mod cube;
+pub mod cylinder;
 mod plane;
 mod sphere;
 mod test_shape;
 
-use cone::Cone;
+pub use cone::{Cone, ConeCap};
 use cube::Cube;
-use cylinder::Cylinder;
+pub use cylinder::Cylinder;
 use plane::Plane;
 use sphere::Sphere;
 use test_shape::TestShape;
