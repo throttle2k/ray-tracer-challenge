@@ -7,8 +7,9 @@ use ray_tracer::{
     materials::Material,
     ppm::PPM,
     rays::Ray,
-    shapes::Object,
+    shapes::ObjectBuilder,
     tuples::{points::Point, Tuple},
+    REGISTRY,
 };
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
@@ -20,8 +21,11 @@ fn main() {
     let pixel_size = wall_size / canvas_pixels as f64;
     let half = wall_size / 2.0;
     let canvas_mutex = Mutex::new(Canvas::new(canvas_pixels, canvas_pixels));
-    let shape =
-        Object::new_sphere().with_material(Material::new().with_color(Color::new(1.0, 0.2, 1.0)));
+    let shape = ObjectBuilder::new_sphere()
+        .with_material(Material::new().with_color(Color::new(1.0, 0.2, 1.0)))
+        .register();
+    let registry = REGISTRY.read().unwrap();
+    let shape = registry.get_object(shape).unwrap();
     let light_position = Point::new(-10.0, 10.0, -10.0);
     let light_color = Color::new(1.0, 1.0, 1.0);
     let light = PointLight::new(light_position, light_color);
@@ -37,12 +41,12 @@ fn main() {
         let xs = shape.intersects(&r);
         if let Some(hit) = xs.hit() {
             let point = r.position(hit.t);
-            let normal = hit.object.normal_at(point);
+            let object = registry.get_object(hit.object_id).unwrap();
+            let normal = object.normal_at(point);
             let eye = -r.direction;
-            let color =
-                hit.object
-                    .material()
-                    .lighting(light, point, eye, normal, false, &hit.object);
+            let color = object
+                .material()
+                .lighting(light, point, eye, normal, false, object);
             let mut canvas = canvas_mutex.lock().unwrap();
             canvas.write_pixel(x, y, color);
         }

@@ -6,15 +6,16 @@ use crate::{
     lights::PointLight,
     materials::Material,
     rays::Ray,
-    shapes::Object,
+    shapes::ObjectBuilder,
     transformations::Transformation,
     tuples::{points::Point, Tuple},
+    REGISTRY,
 };
 
 #[derive(Debug)]
 pub struct World {
     lights: Vec<PointLight>,
-    objects: Vec<Object>,
+    objects: Vec<usize>,
 }
 
 impl Default for World {
@@ -25,9 +26,9 @@ impl Default for World {
             .with_color(Color::new(0.8, 1.0, 0.6))
             .with_diffuse(0.7)
             .with_specular(0.2);
-        let s1 = Object::new_sphere().with_material(m1);
+        let s1 = ObjectBuilder::new_sphere().with_material(m1).register();
         let t2 = Transformation::new_transform().scaling(0.5, 0.5, 0.5);
-        let s2 = Object::new_sphere().with_transform(t2);
+        let s2 = ObjectBuilder::new_sphere().with_transform(t2).register();
         let objects = vec![s1, s2];
         Self { lights, objects }
     }
@@ -46,7 +47,7 @@ impl World {
         self
     }
 
-    pub fn with_objects(mut self, objects: Vec<Object>) -> Self {
+    pub fn with_objects(mut self, objects: Vec<usize>) -> Self {
         self.objects = objects;
         self
     }
@@ -55,18 +56,16 @@ impl World {
         &self.lights
     }
 
-    pub fn objects(&self) -> &[Object] {
+    pub fn objects(&self) -> &[usize] {
         &self.objects
-    }
-
-    pub fn object_mut(&mut self, idx: usize) -> Option<&mut Object> {
-        self.objects.get_mut(idx)
     }
 
     pub fn intersect_world(&self, ray: Ray) -> Intersections {
         let mut xs = Intersections::new();
+        let registry = REGISTRY.read().unwrap();
         self.objects
             .iter()
+            .map(|&id| registry.get_object(id).unwrap())
             .for_each(|obj| xs.push_all(obj.intersects(&ray)));
         xs.sort_by(|i1, i2| i1.t.total_cmp(&i2.t));
         xs
@@ -76,28 +75,29 @@ impl World {
         self.lights()
             .iter()
             .map(|light| {
+                let registry = REGISTRY.read().unwrap();
+                let obj = registry.get_object(comps.object_id).unwrap();
                 let in_shadow =
-                    comps.object.material().receive_shadows && self.is_shadowed(comps.over_point);
-                let surface = comps.object.material().lighting(
+                    obj.material().receive_shadows && self.is_shadowed(comps.over_point);
+                let surface = obj.material().lighting(
                     *light,
                     comps.over_point,
                     comps.eye_v,
                     comps.normal_v,
                     in_shadow,
-                    &comps.object,
+                    obj,
                 );
                 let reflected = self.reflected_color(&comps, remaining);
                 let refracted = self.refracted_color(&comps, remaining);
-                let ref_sum = if comps.object.material().reflective > 0.0
-                    && comps.object.material().transparency > 0.0
-                {
-                    let reflectance = comps.schlick();
-                    let reflected_mod = &reflected * reflectance;
-                    let refracted_mod = &refracted * (1.0 - reflectance);
-                    &reflected_mod + &refracted_mod
-                } else {
-                    &reflected + &refracted
-                };
+                let ref_sum =
+                    if obj.material().reflective > 0.0 && obj.material().transparency > 0.0 {
+                        let reflectance = comps.schlick();
+                        let reflected_mod = &reflected * reflectance;
+                        let refracted_mod = &refracted * (1.0 - reflectance);
+                        &reflected_mod + &refracted_mod
+                    } else {
+                        &reflected + &refracted
+                    };
                 &surface + &ref_sum
             })
             .sum()
@@ -120,10 +120,14 @@ impl World {
             let direction = v.normalize();
             let shadow_ray = Ray::new(p, direction);
             let xs: Intersections = self.intersect_world(shadow_ray);
-            let shadowing_xs: Intersections = xs
-                .iter()
-                .filter(|i| i.object.material().cast_shadows == true)
-                .collect();
+            let mut shadowing_xs: Intersections = Intersections::new();
+            xs.iter()
+                .filter(|i| {
+                    let registry = REGISTRY.read().unwrap();
+                    let obj = registry.get_object(i.object_id).unwrap();
+                    obj.material().cast_shadows == true
+                })
+                .for_each(|i| shadowing_xs.push(*i));
 
             let h = shadowing_xs.hit();
             if let Some(h) = h {
@@ -136,17 +140,21 @@ impl World {
     }
 
     pub fn reflected_color(&self, comps: &Computation, remaining: usize) -> Color {
-        if comps.object.material().reflective.approx_eq(0.0) || remaining == 0 {
+        let registry = REGISTRY.read().unwrap();
+        let obj = registry.get_object(comps.object_id).unwrap();
+        if obj.material().reflective.approx_eq(0.0) || remaining == 0 {
             Color::black()
         } else {
             let reflected_ray = Ray::new(comps.over_point, comps.reflect_v);
             let color = self.color_at(reflected_ray, remaining - 1);
-            color * comps.object.material().reflective
+            color * obj.material().reflective
         }
     }
 
     pub fn refracted_color(&self, comps: &Computation, remaining: usize) -> Color {
-        if comps.object.material().transparency.approx_eq(0.0) || remaining == 0 {
+        let registry = REGISTRY.read().unwrap();
+        let obj = registry.get_object(comps.object_id).unwrap();
+        if obj.material().transparency.approx_eq(0.0) || remaining == 0 {
             return Color::black();
         };
         let n_ratio = comps.n1 / comps.n2;
@@ -158,7 +166,7 @@ impl World {
             let cos_t = f64::sqrt(1.0 - sin2_t);
             let direction = comps.normal_v * (n_ratio * cos_i - cos_t) - comps.eye_v * n_ratio;
             let refract_ray = Ray::new(comps.under_point, direction);
-            self.color_at(refract_ray, remaining - 1) * comps.object.material().transparency
+            self.color_at(refract_ray, remaining - 1) * obj.material().transparency
         }
     }
 }
@@ -175,22 +183,6 @@ mod tests {
         let w = World::new();
         assert_eq!(w.objects(), Vec::new());
         assert_eq!(w.lights(), Vec::new());
-    }
-
-    #[test]
-    fn default_world() {
-        let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
-        let m1 = Material::new()
-            .with_color(Color::new(0.8, 1.0, 0.6))
-            .with_diffuse(0.7)
-            .with_specular(0.2);
-        let s1 = Object::new_sphere().with_material(m1);
-        let t2 = Transformation::new_transform().scaling(0.5, 0.5, 0.5);
-        let s2 = Object::new_sphere().with_transform(t2);
-        let w = World::default();
-        assert!(w.lights.contains(&light));
-        assert!(w.objects.contains(&s1));
-        assert!(w.objects.contains(&s2));
     }
 
     #[test]
@@ -223,11 +215,27 @@ mod tests {
 
     #[test]
     fn color_with_intersection_behind_ray() {
-        let mut w = World::default();
-        let outer = w.object_mut(0).unwrap();
-        outer.material_mut().ambient = 1.0;
-        let inner = w.object_mut(1).unwrap();
-        inner.material_mut().ambient = 1.0;
+        let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
+        let lights = vec![light];
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_diffuse(0.7)
+                    .with_ambient(1.0)
+                    .with_specular(0.2),
+            )
+            .register();
+        let s2 = ObjectBuilder::new_sphere()
+            .with_transform(Transformation::new_transform().scaling(0.5, 0.5, 0.5))
+            .with_material(Material::new().with_ambient(1.0))
+            .register();
+        let objects = vec![s1, s2];
+
+        let w = World::new().with_objects(objects).with_lights(lights);
+
+        let registry = REGISTRY.read().unwrap();
+        let inner = registry.get_object(*w.objects().get(1).unwrap()).unwrap();
         let inner_color = inner.material().color;
         let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
         let c = w.color_at(r, 5);
@@ -264,10 +272,11 @@ mod tests {
 
     #[test]
     fn a_material_can_opt_out_shadow() {
-        let object_without_shadow = Object::new_plane()
+        let object_without_shadow = ObjectBuilder::new_plane()
             .with_material(Material::new().with_cast_shadows(false))
-            .with_transform(Transformation::new_transform().translation(0.0, 1.0, 0.0));
-        let target_object = Object::new_plane();
+            .with_transform(Transformation::new_transform().translation(0.0, 1.0, 0.0))
+            .register();
+        let target_object = ObjectBuilder::new_plane().register();
         let light = PointLight::new(Point::new(0.0, 10.0, 0.0), Color::white());
         let w = World::new()
             .with_objects(vec![object_without_shadow, target_object])
@@ -279,14 +288,14 @@ mod tests {
     #[test]
     fn shade_hit_with_intersection_in_shadow() {
         let l = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
-        let s1 = Object::new_sphere();
+        let s1 = ObjectBuilder::new_sphere().register();
         let t2 = Transformation::new_transform().translation(0.0, 0.0, 10.0);
-        let s2 = Object::new_sphere().with_transform(t2);
+        let s2 = ObjectBuilder::new_sphere().with_transform(t2).register();
         let w = World::new()
             .with_lights(vec![l])
             .with_objects(vec![s1, s2.clone()]);
         let r = Ray::new(Point::new(0.0, 0.0, 5.0), Vector::z_norm());
-        let i = Intersection::new(4.0, &s2);
+        let i = Intersection::new(4.0, s2);
         let mut xs = Intersections::new();
         xs.push(i);
         let comps = i.prepare_computations(r, &xs);
@@ -298,19 +307,22 @@ mod tests {
     fn a_non_reflective_material_is_black() {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let lights = vec![light];
-        let s1 = Object::new_sphere().with_material(
-            Material::new()
-                .with_color(Color::new(0.8, 1.0, 0.6))
-                .with_diffuse(0.7)
-                .with_specular(0.2),
-        );
-        let s2 = Object::new_sphere()
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_diffuse(0.7)
+                    .with_specular(0.2),
+            )
+            .register();
+        let s2 = ObjectBuilder::new_sphere()
             .with_material(Material::new().with_ambient(1.0))
-            .with_transform(Transformation::new_transform().scaling(0.5, 0.5, 0.5));
+            .with_transform(Transformation::new_transform().scaling(0.5, 0.5, 0.5))
+            .register();
         let objects = vec![s1, s2.clone()];
         let w = World::new().with_lights(lights).with_objects(objects);
         let r = Ray::new(Point::zero(), Vector::z_norm());
-        let i = Intersection::new(1.0, &s2);
+        let i = Intersection::new(1.0, s2);
         let mut xs = Intersections::new();
         xs.push(i);
         let comps = i.prepare_computations(r, &xs);
@@ -322,23 +334,26 @@ mod tests {
     fn a_reflective_material_reflects_color() {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let lights = vec![light];
-        let s1 = Object::new_sphere().with_material(
-            Material::new()
-                .with_color(Color::new(0.8, 1.0, 0.6))
-                .with_diffuse(0.7)
-                .with_specular(0.2),
-        );
-        let s2 = Object::new_sphere();
-        let shape = Object::new_plane()
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_diffuse(0.7)
+                    .with_specular(0.2),
+            )
+            .register();
+        let s2 = ObjectBuilder::new_sphere().register();
+        let shape = ObjectBuilder::new_plane()
             .with_material(Material::new().with_reflective(0.5))
-            .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0));
-        let objects = vec![s1, s2, shape.clone()];
+            .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0))
+            .register();
+        let objects = vec![s1, s2, shape];
         let w = World::new().with_lights(lights).with_objects(objects);
         let r = Ray::new(
             Point::new(0.0, 0.0, -3.0),
             Vector::new(0.0, -f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0),
         );
-        let i = Intersection::new(f64::sqrt(2.0), &shape);
+        let i = Intersection::new(f64::sqrt(2.0), shape);
         let mut xs = Intersections::new();
         xs.push(i);
         let comps = i.prepare_computations(r, &xs);
@@ -351,12 +366,14 @@ mod tests {
         let w = World::new()
             .with_lights(vec![PointLight::new(Point::zero(), Color::white())])
             .with_objects(vec![
-                Object::new_plane()
+                ObjectBuilder::new_plane()
                     .with_material(Material::new().with_reflective(1.0))
-                    .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0)),
-                Object::new_plane()
+                    .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0))
+                    .register(),
+                ObjectBuilder::new_plane()
                     .with_material(Material::new().with_reflective(1.0))
-                    .with_transform(Transformation::new_transform().translation(0.0, 1.0, 0.0)),
+                    .with_transform(Transformation::new_transform().translation(0.0, 1.0, 0.0))
+                    .register(),
             ]);
         let r = Ray::new(Point::zero(), Vector::y_norm());
         w.color_at(r, 5);
@@ -366,23 +383,26 @@ mod tests {
     fn the_reflected_color_at_the_maximum_depth() {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let lights = vec![light];
-        let s1 = Object::new_sphere().with_material(
-            Material::new()
-                .with_color(Color::new(0.8, 1.0, 0.6))
-                .with_diffuse(0.7)
-                .with_specular(0.2),
-        );
-        let s2 = Object::new_sphere();
-        let shape = Object::new_plane()
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_diffuse(0.7)
+                    .with_specular(0.2),
+            )
+            .register();
+        let s2 = ObjectBuilder::new_sphere().register();
+        let shape = ObjectBuilder::new_plane()
             .with_material(Material::new().with_reflective(0.5))
-            .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0));
-        let objects = vec![s1, s2, shape.clone()];
+            .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0))
+            .register();
+        let objects = vec![s1, s2, shape];
         let w = World::new().with_lights(lights).with_objects(objects);
         let r = Ray::new(
             Point::new(0.0, 0.0, -3.0),
             Vector::new(0.0, -f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0),
         );
-        let i = Intersection::new(f64::sqrt(2.0), &shape);
+        let i = Intersection::new(f64::sqrt(2.0), shape);
         let mut xs = Intersections::new();
         xs.push(i);
         let comps = i.prepare_computations(r, &xs);
@@ -395,8 +415,8 @@ mod tests {
         let w = World::default();
         let shape = w.objects().get(0).unwrap();
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
-        let i1 = Intersection::new(4.0, &shape);
-        let i2 = Intersection::new(6.0, &shape);
+        let i1 = Intersection::new(4.0, *shape);
+        let i2 = Intersection::new(6.0, *shape);
         let mut xs = Intersections::new();
         xs.push(i1);
         xs.push(i2);
@@ -413,20 +433,23 @@ mod tests {
             .with_color(Color::new(0.8, 1.0, 0.6))
             .with_diffuse(0.7)
             .with_specular(0.2);
-        let s1 = Object::new_sphere().with_material(m1).with_material(
-            Material::new()
-                .with_transparency(1.0)
-                .with_refractive_index(1.5),
-        );
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(m1)
+            .with_material(
+                Material::new()
+                    .with_transparency(1.0)
+                    .with_refractive_index(1.5),
+            )
+            .register();
         let t2 = Transformation::new_transform().scaling(0.5, 0.5, 0.5);
-        let s2 = Object::new_sphere().with_transform(t2);
+        let s2 = ObjectBuilder::new_sphere().with_transform(t2).register();
         let objects = vec![s1, s2];
         let w = World::new().with_lights(lights).with_objects(objects);
         let shape = w.objects().get(0).unwrap();
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
         let mut xs = Intersections::new();
-        xs.push(Intersection::new(4.0, &shape));
-        xs.push(Intersection::new(6.0, &shape));
+        xs.push(Intersection::new(4.0, *shape));
+        xs.push(Intersection::new(6.0, *shape));
         let comps = xs[0].prepare_computations(r, &xs);
         let c = w.refracted_color(&comps, 0);
         assert_eq!(c, Color::black());
@@ -436,20 +459,22 @@ mod tests {
     fn the_refracted_color_under_total_reflection() {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let lights = vec![light];
-        let s1 = Object::new_sphere().with_material(
-            Material::new()
-                .with_transparency(1.0)
-                .with_refractive_index(1.5),
-        );
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_transparency(1.0)
+                    .with_refractive_index(1.5),
+            )
+            .register();
         let t2 = Transformation::new_transform().scaling(0.5, 0.5, 0.5);
-        let s2 = Object::new_sphere().with_transform(t2);
+        let s2 = ObjectBuilder::new_sphere().with_transform(t2).register();
         let objects = vec![s1, s2];
         let w = World::new().with_lights(lights).with_objects(objects);
         let shape = w.objects().get(0).unwrap();
         let r = Ray::new(Point::new(0.0, 0.0, f64::sqrt(2.0) / 2.0), Vector::y_norm());
         let mut xs = Intersections::new();
-        xs.push(Intersection::new(-f64::sqrt(2.0) / 2.0, &shape));
-        xs.push(Intersection::new(f64::sqrt(2.0) / 2.0, &shape));
+        xs.push(Intersection::new(-f64::sqrt(2.0) / 2.0, *shape));
+        xs.push(Intersection::new(f64::sqrt(2.0) / 2.0, *shape));
         let comps = xs[1].prepare_computations(r, &xs);
         let c = w.refracted_color(&comps, 5);
         assert_eq!(c, Color::black());
@@ -465,20 +490,22 @@ mod tests {
             .with_ambient(1.0)
             .with_specular(0.2)
             .with_pattern(Pattern::new_test_pattern());
-        let s1 = Object::new_sphere().with_material(m1);
-        let s2 = Object::new_sphere().with_material(
-            Material::new()
-                .with_transparency(1.0)
-                .with_refractive_index(1.5),
-        );
+        let s1 = ObjectBuilder::new_sphere().with_material(m1).register();
+        let s2 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_transparency(1.0)
+                    .with_refractive_index(1.5),
+            )
+            .register();
         let objects = vec![s1.clone(), s2.clone()];
         let w = World::new().with_lights(lights).with_objects(objects);
         let r = Ray::new(Point::new(0.0, 0.0, 0.1), Vector::y_norm());
         let mut xs = Intersections::new();
-        xs.push(Intersection::new(-0.9899, &s1));
-        xs.push(Intersection::new(-0.4899, &s2));
-        xs.push(Intersection::new(0.4899, &s2));
-        xs.push(Intersection::new(0.9899, &s1));
+        xs.push(Intersection::new(-0.9899, s1));
+        xs.push(Intersection::new(-0.4899, s2));
+        xs.push(Intersection::new(0.4899, s2));
+        xs.push(Intersection::new(0.9899, s1));
         let comps = xs[2].prepare_computations(r, &xs);
         let c = w.refracted_color(&comps, 5);
         assert_eq!(c, Color::new(0.0, 0.99888, 0.04722));
@@ -488,36 +515,41 @@ mod tests {
     fn shade_hit_with_transparent_material() {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let lights = vec![light];
-        let s1 = Object::new_sphere().with_material(
-            Material::new()
-                .with_color(Color::new(0.8, 1.0, 0.6))
-                .with_diffuse(0.7)
-                .with_specular(0.2),
-        );
-        let s2 = Object::new_sphere()
-            .with_transform(Transformation::new_transform().scaling(0.5, 0.5, 0.5));
-        let floor = Object::new_plane()
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_diffuse(0.7)
+                    .with_specular(0.2),
+            )
+            .register();
+        let s2 = ObjectBuilder::new_sphere()
+            .with_transform(Transformation::new_transform().scaling(0.5, 0.5, 0.5))
+            .register();
+        let floor = ObjectBuilder::new_plane()
             .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0))
             .with_material(
                 Material::new()
                     .with_transparency(0.5)
                     .with_refractive_index(1.5),
-            );
-        let ball = Object::new_sphere()
+            )
+            .register();
+        let ball = ObjectBuilder::new_sphere()
             .with_transform(Transformation::new_transform().translation(0.0, -3.5, -0.5))
             .with_material(
                 Material::new()
                     .with_color(Color::new(1.0, 0.0, 0.0))
                     .with_ambient(0.5),
-            );
-        let objects = vec![s1, s2, floor.clone(), ball];
+            )
+            .register();
+        let objects = vec![s1, s2, floor, ball];
         let w = World::new().with_lights(lights).with_objects(objects);
         let r = Ray::new(
             Point::new(0.0, 0.0, -3.0),
             Vector::new(0.0, -f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0),
         );
         let mut xs = Intersections::new();
-        xs.push(Intersection::new(f64::sqrt(2.0), &floor));
+        xs.push(Intersection::new(f64::sqrt(2.0), floor));
         let comps = xs[0].prepare_computations(r, &xs);
         let c = w.shade_hit(comps, 5);
         assert_eq!(c, Color::new(0.93642, 0.68642, 0.68642));
@@ -527,29 +559,34 @@ mod tests {
     fn shade_hit_with_reflective_transparent_material() {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let lights = vec![light];
-        let s1 = Object::new_sphere().with_material(
-            Material::new()
-                .with_color(Color::new(0.8, 1.0, 0.6))
-                .with_diffuse(0.7)
-                .with_specular(0.2),
-        );
-        let s2 = Object::new_sphere()
-            .with_transform(Transformation::new_transform().scaling(0.5, 0.5, 0.5));
-        let floor = Object::new_plane()
+        let s1 = ObjectBuilder::new_sphere()
+            .with_material(
+                Material::new()
+                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_diffuse(0.7)
+                    .with_specular(0.2),
+            )
+            .register();
+        let s2 = ObjectBuilder::new_sphere()
+            .with_transform(Transformation::new_transform().scaling(0.5, 0.5, 0.5))
+            .register();
+        let floor = ObjectBuilder::new_plane()
             .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0))
             .with_material(
                 Material::new()
                     .with_reflective(0.5)
                     .with_transparency(0.5)
                     .with_refractive_index(1.5),
-            );
-        let ball = Object::new_sphere()
+            )
+            .register();
+        let ball = ObjectBuilder::new_sphere()
             .with_transform(Transformation::new_transform().translation(0.0, -3.5, -0.5))
             .with_material(
                 Material::new()
                     .with_color(Color::new(1.0, 0.0, 0.0))
                     .with_ambient(0.5),
-            );
+            )
+            .register();
         let objects = vec![s1, s2, floor.clone(), ball];
         let w = World::new().with_lights(lights).with_objects(objects);
         let r = Ray::new(
@@ -557,7 +594,7 @@ mod tests {
             Vector::new(0.0, -f64::sqrt(2.0) / 2.0, f64::sqrt(2.0) / 2.0),
         );
         let mut xs = Intersections::new();
-        xs.push(Intersection::new(f64::sqrt(2.0), &floor));
+        xs.push(Intersection::new(f64::sqrt(2.0), floor));
         let comps = xs[0].prepare_computations(r, &xs);
         let c = w.shade_hit(comps, 5);
         assert_eq!(c, Color::new(0.93391, 0.69643, 0.69243));

@@ -6,7 +6,7 @@ use ray_tracer::{
     lights::PointLight,
     materials::Material,
     ppm::PPM,
-    shapes::Object,
+    shapes::ObjectBuilder,
     transformations::Transformation,
     tuples::{points::Point, vectors::Vector, Tuple},
     world::World,
@@ -16,16 +16,19 @@ fn main() {
     let floor_m = Material::new()
         .with_color(Color::new(1.0, 0.9, 0.9))
         .with_specular(0.0);
-    let floor = Object::new_plane().with_material(floor_m.clone());
+    let floor = ObjectBuilder::new_plane()
+        .with_material(floor_m.clone())
+        .register();
 
     let middle_t = Transformation::new_transform().translation(-0.5, 1.0, 0.5);
     let middle_m = Material::new()
         .with_color(Color::new(0.1, 1.0, 0.5))
         .with_diffuse(0.7)
         .with_specular(0.3);
-    let middle = Object::new_sphere()
+    let middle = ObjectBuilder::new_sphere()
         .with_material(middle_m)
-        .with_transform(middle_t);
+        .with_transform(middle_t)
+        .register();
 
     let right_t = Transformation::new_transform()
         .scaling(0.5, 0.5, 0.5)
@@ -34,9 +37,10 @@ fn main() {
         .with_color(Color::new(0.5, 1.0, 0.1))
         .with_diffuse(0.7)
         .with_specular(0.3);
-    let right = Object::new_sphere()
+    let right = ObjectBuilder::new_sphere()
         .with_material(right_m)
-        .with_transform(right_t);
+        .with_transform(right_t)
+        .register();
 
     let left_t = Transformation::new_transform()
         .scaling(0.33, 0.33, 0.33)
@@ -45,17 +49,19 @@ fn main() {
         .with_color(Color::new(1.0, 0.8, 0.1))
         .with_diffuse(0.7)
         .with_specular(0.3);
-    let left = Object::new_sphere()
+    let left = ObjectBuilder::new_sphere()
         .with_material(left_m)
-        .with_transform(left_t);
+        .with_transform(left_t)
+        .register();
 
     let wall1_t = Transformation::new_transform()
         .rotation_x(PI / 2.0)
         .translation(0.0, 0.0, 5.0);
     let wall1_m = Material::new().with_color(Color::red());
-    let wall1 = Object::new_plane()
+    let wall1 = ObjectBuilder::new_plane()
         .with_transform(wall1_t)
-        .with_material(wall1_m);
+        .with_material(wall1_m)
+        .register();
 
     let light_source = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
 

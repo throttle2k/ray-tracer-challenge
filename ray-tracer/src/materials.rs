@@ -135,7 +135,7 @@ impl Material {
 
 #[cfg(test)]
 mod tests {
-    use crate::tuples::Tuple;
+    use crate::{shapes::ObjectBuilder, tuples::Tuple, REGISTRY};
 
     use super::*;
 
@@ -157,14 +157,10 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(
-            light,
-            position,
-            eyev,
-            normalv,
-            in_shadow,
-            &Object::new_test_shape(),
-        );
+        let object = ObjectBuilder::new_test_shape().register();
+        let registry = REGISTRY.read().unwrap();
+        let object = registry.get_object(object).unwrap();
+        let result = m.lighting(light, position, eyev, normalv, in_shadow, object);
         assert_eq!(result, Color::new(1.9, 1.9, 1.9));
     }
 
@@ -176,14 +172,10 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(
-            light,
-            position,
-            eyev,
-            normalv,
-            in_shadow,
-            &Object::new_test_shape(),
-        );
+        let object = ObjectBuilder::new_test_shape().register();
+        let registry = REGISTRY.read().unwrap();
+        let object = registry.get_object(object).unwrap();
+        let result = m.lighting(light, position, eyev, normalv, in_shadow, object);
         assert_eq!(result, Color::new(1.0, 1.0, 1.0));
     }
 
@@ -195,14 +187,10 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(
-            light,
-            position,
-            eyev,
-            normalv,
-            in_shadow,
-            &Object::new_test_shape(),
-        );
+        let object = ObjectBuilder::new_test_shape().register();
+        let registry = REGISTRY.read().unwrap();
+        let object = registry.get_object(object).unwrap();
+        let result = m.lighting(light, position, eyev, normalv, in_shadow, object);
         assert_eq!(result, Color::new(0.7364, 0.7364, 0.7364));
     }
 
@@ -214,14 +202,10 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(
-            light,
-            position,
-            eyev,
-            normalv,
-            in_shadow,
-            &Object::new_test_shape(),
-        );
+        let object = ObjectBuilder::new_test_shape().register();
+        let registry = REGISTRY.read().unwrap();
+        let object = registry.get_object(object).unwrap();
+        let result = m.lighting(light, position, eyev, normalv, in_shadow, object);
         assert_eq!(result, Color::new(1.6364, 1.6364, 1.6364));
     }
 
@@ -233,14 +217,10 @@ mod tests {
         let normalv = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, 10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = false;
-        let result = m.lighting(
-            light,
-            position,
-            eyev,
-            normalv,
-            in_shadow,
-            &Object::new_test_shape(),
-        );
+        let object = ObjectBuilder::new_test_shape().register();
+        let registry = REGISTRY.read().unwrap();
+        let object = registry.get_object(object).unwrap();
+        let result = m.lighting(light, position, eyev, normalv, in_shadow, object);
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 
@@ -252,14 +232,10 @@ mod tests {
         let normal_v = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let in_shadow = true;
-        let result = m.lighting(
-            light,
-            position,
-            eye_v,
-            normal_v,
-            in_shadow,
-            &Object::new_test_shape(),
-        );
+        let object = ObjectBuilder::new_test_shape().register();
+        let registry = REGISTRY.read().unwrap();
+        let object = registry.get_object(object).unwrap();
+        let result = m.lighting(light, position, eye_v, normal_v, in_shadow, object);
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 
@@ -276,13 +252,19 @@ mod tests {
         let eye_v = Vector::new(0.0, 0.0, -1.0);
         let normal_v = Vector::new(0.0, 0.0, -1.0);
         let light = PointLight::new(Point::new(0.0, 0.0, -10.0), Color::white());
+        let object1 = ObjectBuilder::new_test_shape().register();
+        let object2 = ObjectBuilder::new_test_shape().register();
+        let registry = REGISTRY.read().unwrap();
+        let object1 = registry.get_object(object1).unwrap();
+        let object2 = registry.get_object(object2).unwrap();
+
         let c1 = m.lighting(
             light,
             Point::new(0.9, 0.0, 0.0),
             eye_v,
             normal_v,
             false,
-            &Object::new_test_shape(),
+            object1,
         );
         let c2 = m.lighting(
             light,
@@ -290,14 +272,14 @@ mod tests {
             eye_v,
             normal_v,
             false,
-            &Object::new_test_shape(),
+            object2,
         );
         assert_eq!(c1, Color::white());
         assert_eq!(c2, Color::black());
     }
 
     #[test]
-    fn reflective_for_deafult_material() {
+    fn reflective_for_default_material() {
         let m = Material::new();
         assert_eq!(m.reflective, 0.0);
     }

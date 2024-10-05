@@ -6,7 +6,7 @@ use ray_tracer::{
     lights::PointLight,
     materials::Material,
     ppm::PPM,
-    shapes::Object,
+    shapes::ObjectBuilder,
     transformations::Transformation,
     tuples::{points::Point, vectors::Vector, Tuple},
     world::World,
@@ -21,12 +21,12 @@ fn cube_grid(
     nz: i32,
     sep: f64,
     rotation: f64,
-) -> Vec<Object> {
-    let mut objects: Vec<Object> = Vec::new();
+) -> Vec<usize> {
+    let mut objects: Vec<usize> = Vec::new();
     for x in 0..nx {
         for y in 0..ny {
             for z in 0..nz {
-                let cube = Object::new_cube()
+                let cube = ObjectBuilder::new_cube()
                     .with_transform(
                         Transformation::new_transform()
                             .scaling(size, size, size)
@@ -34,7 +34,8 @@ fn cube_grid(
                             .translation(x as f64 * sep, y as f64 * sep, z as f64 * sep)
                             .rotation_y(rotation),
                     )
-                    .with_material(material.clone());
+                    .with_material(material.clone())
+                    .register();
                 objects.push(cube);
             }
         }
@@ -43,7 +44,7 @@ fn cube_grid(
 }
 
 fn main() {
-    let room = Object::new_cube()
+    let room = ObjectBuilder::new_cube()
         .with_transform(Transformation::new_transform().scaling(200.0, 200.0, 200.0))
         .with_material(
             Material::new()
@@ -53,7 +54,8 @@ fn main() {
                 .with_specular(0.0)
                 .with_shininess(1.0)
                 .with_cast_shadows(false),
-        );
+        )
+        .register();
 
     let sep = 3.0;
     let rotation = PI / 6.0;
@@ -74,7 +76,7 @@ fn main() {
         rotation,
     );
 
-    let ball = Object::new_sphere()
+    let ball = ObjectBuilder::new_sphere()
         .with_transform(
             Transformation::new_transform()
                 .scaling(18.0, 18.0, 18.0)
@@ -89,7 +91,8 @@ fn main() {
                 .with_specular(1.0)
                 .with_shininess(1000.0)
                 .with_reflective(0.5),
-        );
+        )
+        .register();
 
     let red_material = Material::new()
         .with_color(Color::new(0.9, 0.0, 0.1))
@@ -107,7 +110,7 @@ fn main() {
         rotation,
     );
 
-    let blue_cube = Object::new_cube()
+    let blue_cube = ObjectBuilder::new_cube()
         .with_material(
             Material::new()
                 .with_color(Color::new(0.0, 0.1, 0.8))
@@ -119,11 +122,12 @@ fn main() {
                 .rotation_y(PI / 6.0)
                 .rotation_x(PI / 4.0)
                 .translation(0.0, 4.0, -5.0),
-        );
+        )
+        .register();
 
     let light = PointLight::new(Point::new(-2.0, 10.0, -10.0), Color::white());
 
-    let mut objects: Vec<Object> = vec![room];
+    let mut objects: Vec<usize> = vec![room];
     objects.append(&mut green_cubes);
     objects.push(ball);
     objects.append(&mut red_cubes);

@@ -6,7 +6,7 @@ use ray_tracer::{
     lights::PointLight,
     materials::Material,
     ppm::PPM,
-    shapes::{cylinder::CylinderCap, Cylinder, Object},
+    shapes::{cylinder::CylinderCap, Cylinder, ObjectBuilder},
     transformations::Transformation,
     tuples::{points::Point, vectors::Vector, Tuple},
     world::World,
@@ -15,7 +15,7 @@ use ray_tracer::{
 fn main() {
     let cyl_len = 4.0;
 
-    let cyl_1 = Object::new_cylinder(
+    let cyl_1 = ObjectBuilder::new_cylinder(
         Cylinder::default()
             .with_minimum(-cyl_len * 1.5)
             .with_maximum(cyl_len * 0.5)
@@ -27,9 +27,10 @@ fn main() {
             .with_specular(1.0)
             .with_shininess(10.0)
             .with_reflective(0.9),
-    );
+    )
+    .register();
 
-    let cyl_2 = Object::new_cylinder(
+    let cyl_2 = ObjectBuilder::new_cylinder(
         Cylinder::default()
             .with_minimum(-cyl_len * 2.0)
             .with_maximum(cyl_len * 4.0)
@@ -47,9 +48,10 @@ fn main() {
             .with_specular(1.0)
             .with_shininess(10.0)
             .with_reflective(0.9),
-    );
+    )
+    .register();
 
-    let cyl_3 = Object::new_cylinder(
+    let cyl_3 = ObjectBuilder::new_cylinder(
         Cylinder::default()
             .with_minimum(-cyl_len * 2.0)
             .with_maximum(cyl_len * 3.0)
@@ -67,9 +69,10 @@ fn main() {
             .with_specular(1.0)
             .with_shininess(10.0)
             .with_reflective(0.9),
-    );
+    )
+    .register();
 
-    let cyl_4 = Object::new_cylinder(
+    let cyl_4 = ObjectBuilder::new_cylinder(
         Cylinder::default()
             .with_minimum(-cyl_len * 3.0)
             .with_maximum(cyl_len * 1.5)
@@ -83,9 +86,10 @@ fn main() {
             .with_specular(0.8)
             .with_shininess(10.0)
             .with_reflective(0.5),
-    );
+    )
+    .register();
 
-    let cyl_5 = Object::new_cylinder(
+    let cyl_5 = ObjectBuilder::new_cylinder(
         Cylinder::default()
             .with_minimum(-cyl_len * 1.0)
             .with_maximum(cyl_len * 1.0)
@@ -103,7 +107,8 @@ fn main() {
             .with_specular(0.8)
             .with_shininess(10.0)
             .with_reflective(0.5),
-    );
+    )
+    .register();
 
     let light = PointLight::new(Point::new(-2.0, 5.0, -10.0), Color::white());
 
