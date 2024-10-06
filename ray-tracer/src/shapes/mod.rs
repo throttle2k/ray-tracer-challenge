@@ -100,7 +100,7 @@ impl Shape {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Object {
-    id: usize,
+    pub id: usize,
     transform: Transformation,
     material: Material,
     shape: Shape,
@@ -119,7 +119,7 @@ pub struct ObjectBuilder {
 
 impl ObjectBuilder {
     fn new(shape: Shape) -> Self {
-        let registry = REGISTRY.read().unwrap();
+        let mut registry = REGISTRY.write().unwrap();
         let id = registry.next_object_id();
         Self {
             id,

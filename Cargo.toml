@@ -1,5 +1,5 @@
 [workspace]
-members = [ "analog-clock", "approx-eq", "colo-rs", "cones-drawing", "cubes-drawing", "open-cylinders-drawing", "patterns-drawing", "plane-drawing", "ray-tracer", "reflections-drawing", "refractions-drawing", "sphere-drawing", "virtual-cannon", "world-drawing"]
+members = [ "analog-clock", "approx-eq", "colo-rs", "cones-drawing", "cubes-drawing", "hexagon-drawing", "open-cylinders-drawing", "patterns-drawing", "plane-drawing", "ray-tracer", "reflections-drawing", "refractions-drawing", "sphere-drawing", "virtual-cannon", "world-drawing"]
 resolver = "2"
 
 [workspace.dependencies]
