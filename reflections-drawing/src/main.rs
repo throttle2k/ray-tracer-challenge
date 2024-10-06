@@ -17,7 +17,7 @@ fn main() {
     let floor = ObjectBuilder::new_plane()
         .with_material(
             Material::new()
-                .with_color(Color::new(1.0, 0.9, 0.9))
+                .with_pattern(Pattern::new_solid_pattern(Color::new(1.0, 0.9, 0.9)))
                 .with_specular(0.0)
                 .with_reflective(0.08)
                 .with_pattern(Pattern::new_blending_pattern(
@@ -37,7 +37,6 @@ fn main() {
     let wall1 = ObjectBuilder::new_plane()
         .with_material(
             Material::new()
-                .with_color(Color::new(1.0, 0.9, 0.9))
                 .with_specular(0.0)
                 .with_pattern(Pattern::new_blending_pattern(
                     Pattern::new_striped_pattern(
@@ -66,7 +65,6 @@ fn main() {
     let wall2 = ObjectBuilder::new_plane()
         .with_material(
             Material::new()
-                .with_color(Color::new(1.0, 0.9, 0.9))
                 .with_specular(0.0)
                 .with_pattern(Pattern::new_blending_pattern(
                     Pattern::new_striped_pattern(
@@ -95,7 +93,7 @@ fn main() {
     let middle = ObjectBuilder::new_sphere()
         .with_material(
             Material::new()
-                .with_color(Color::white())
+                .with_pattern(Pattern::new_solid_pattern(Color::white()))
                 .with_diffuse(0.7)
                 .with_specular(0.3)
                 .with_reflective(0.9)
@@ -112,7 +110,7 @@ fn main() {
     let center = ObjectBuilder::new_sphere()
         .with_material(
             Material::new()
-                .with_color(Color::new(0.8, 0.1, 0.1))
+                .with_pattern(Pattern::new_solid_pattern(Color::new(0.8, 0.1, 0.1)))
                 .with_diffuse(0.7)
                 .with_specular(0.3),
         )
@@ -126,7 +124,7 @@ fn main() {
     let left = ObjectBuilder::new_sphere()
         .with_material(
             Material::new()
-                .with_color(Color::new(0.1, 0.1, 0.9))
+                .with_pattern(Pattern::new_solid_pattern(Color::new(0.1, 0.1, 0.9)))
                 .with_diffuse(0.7)
                 .with_specular(0.3),
         )
@@ -140,7 +138,7 @@ fn main() {
     let right = ObjectBuilder::new_sphere()
         .with_material(
             Material::new()
-                .with_color(Color::new(0.5, 1.0, 0.1))
+                .with_pattern(Pattern::new_solid_pattern(Color::new(0.5, 1.0, 0.1)))
                 .with_diffuse(0.7)
                 .with_specular(0.3),
         )

@@ -5,6 +5,7 @@ use crate::{
     intersections::{Computation, Intersections},
     lights::PointLight,
     materials::Material,
+    patterns::Pattern,
     rays::Ray,
     shapes::ObjectBuilder,
     transformations::Transformation,
@@ -23,7 +24,7 @@ impl Default for World {
         let light = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
         let lights = vec![light];
         let m1 = Material::new()
-            .with_color(Color::new(0.8, 1.0, 0.6))
+            .with_pattern(Pattern::new_solid_pattern(Color::new(0.8, 1.0, 0.6)))
             .with_diffuse(0.7)
             .with_specular(0.2);
         let s1 = ObjectBuilder::new_sphere().with_material(m1).register();
@@ -72,35 +73,35 @@ impl World {
     }
 
     pub fn shade_hit(&self, comps: Computation, remaining: usize) -> Color {
-        self.lights()
+        let registry = REGISTRY.read().unwrap();
+        let obj = registry.get_object(comps.object_id).unwrap();
+        let color = self
+            .lights()
             .iter()
             .map(|light| {
-                let registry = REGISTRY.read().unwrap();
-                let obj = registry.get_object(comps.object_id).unwrap();
                 let in_shadow =
                     obj.material().receive_shadows && self.is_shadowed(comps.over_point);
-                let surface = obj.material().lighting(
+                obj.material().lighting(
                     *light,
                     comps.over_point,
                     comps.eye_v,
                     comps.normal_v,
                     in_shadow,
                     obj,
-                );
-                let reflected = self.reflected_color(&comps, remaining);
-                let refracted = self.refracted_color(&comps, remaining);
-                let ref_sum =
-                    if obj.material().reflective > 0.0 && obj.material().transparency > 0.0 {
-                        let reflectance = comps.schlick();
-                        let reflected_mod = &reflected * reflectance;
-                        let refracted_mod = &refracted * (1.0 - reflectance);
-                        &reflected_mod + &refracted_mod
-                    } else {
-                        &reflected + &refracted
-                    };
-                &surface + &ref_sum
+                )
             })
-            .sum()
+            .sum();
+        let reflected = self.reflected_color(&comps, remaining);
+        let refracted = self.refracted_color(&comps, remaining);
+        let ref_sum = if obj.material().reflective > 0.0 && obj.material().transparency > 0.0 {
+            let reflectance = comps.schlick();
+            let reflected_mod = &reflected * reflectance;
+            let refracted_mod = &refracted * (1.0 - reflectance);
+            &reflected_mod + &refracted_mod
+        } else {
+            &reflected + &refracted
+        };
+        &color + &ref_sum
     }
 
     pub fn color_at(&self, r: Ray, remaining: usize) -> Color {
@@ -220,7 +221,7 @@ mod tests {
         let s1 = ObjectBuilder::new_sphere()
             .with_material(
                 Material::new()
-                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_pattern(Pattern::new_solid_pattern(Color::new(0.8, 1.0, 0.6)))
                     .with_diffuse(0.7)
                     .with_ambient(1.0)
                     .with_specular(0.2),
@@ -236,7 +237,10 @@ mod tests {
 
         let registry = REGISTRY.read().unwrap();
         let inner = registry.get_object(*w.objects().get(1).unwrap()).unwrap();
-        let inner_color = inner.material().color;
+        let inner_color = inner
+            .material()
+            .pattern
+            .pattern_at_object(inner, Point::new(0.0, 0.0, 0.75));
         let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
         let c = w.color_at(r, 5);
         assert_eq!(c, inner_color);
@@ -310,7 +314,7 @@ mod tests {
         let s1 = ObjectBuilder::new_sphere()
             .with_material(
                 Material::new()
-                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_pattern(Pattern::new_solid_pattern(Color::new(0.8, 1.0, 0.6)))
                     .with_diffuse(0.7)
                     .with_specular(0.2),
             )
@@ -337,7 +341,7 @@ mod tests {
         let s1 = ObjectBuilder::new_sphere()
             .with_material(
                 Material::new()
-                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_pattern(Pattern::new_solid_pattern(Color::new(0.8, 1.0, 0.6)))
                     .with_diffuse(0.7)
                     .with_specular(0.2),
             )
@@ -386,7 +390,7 @@ mod tests {
         let s1 = ObjectBuilder::new_sphere()
             .with_material(
                 Material::new()
-                    .with_color(Color::new(0.8, 1.0, 0.6))
+                    .with_pattern(Pattern::new_solid_pattern(Color::new(0.8, 1.0, 0.6)))
                     .with_diffuse(0.7)
                     .with_specular(0.2),
             )

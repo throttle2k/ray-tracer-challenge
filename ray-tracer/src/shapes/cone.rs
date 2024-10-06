@@ -1,6 +1,7 @@
 use approx_eq::{ApproxEq, EPSILON};
 
 use crate::{
+    bounds::Bounds,
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -133,6 +134,13 @@ impl Cone {
                 xs.push(t);
             }
         }
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        Bounds::new(
+            Point::new(self.minimum, self.minimum, self.minimum),
+            Point::new(self.maximum, self.maximum, self.maximum),
+        )
     }
 }
 

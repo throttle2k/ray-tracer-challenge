@@ -5,6 +5,7 @@ use ray_tracer::{
     camera::Camera,
     lights::PointLight,
     materials::Material,
+    patterns::Pattern,
     ppm::PPM,
     shapes::ObjectBuilder,
     transformations::Transformation,
@@ -14,7 +15,7 @@ use ray_tracer::{
 
 fn main() {
     let floor_m = Material::new()
-        .with_color(Color::new(1.0, 0.9, 0.9))
+        .with_pattern(Pattern::new_solid_pattern(Color::new(1.0, 0.9, 0.9)))
         .with_specular(0.0);
     let floor = ObjectBuilder::new_plane()
         .with_material(floor_m.clone())
@@ -22,7 +23,7 @@ fn main() {
 
     let middle_t = Transformation::new_transform().translation(-0.5, 1.0, 0.5);
     let middle_m = Material::new()
-        .with_color(Color::new(0.1, 1.0, 0.5))
+        .with_pattern(Pattern::new_solid_pattern(Color::new(0.1, 1.0, 0.5)))
         .with_diffuse(0.7)
         .with_specular(0.3);
     let middle = ObjectBuilder::new_sphere()
@@ -34,7 +35,7 @@ fn main() {
         .scaling(0.5, 0.5, 0.5)
         .translation(1.5, 0.5, -0.5);
     let right_m = Material::new()
-        .with_color(Color::new(0.5, 1.0, 0.1))
+        .with_pattern(Pattern::new_solid_pattern(Color::new(0.5, 1.0, 0.1)))
         .with_diffuse(0.7)
         .with_specular(0.3);
     let right = ObjectBuilder::new_sphere()
@@ -46,7 +47,7 @@ fn main() {
         .scaling(0.33, 0.33, 0.33)
         .translation(-1.5, 0.33, -0.75);
     let left_m = Material::new()
-        .with_color(Color::new(1.0, 0.8, 0.1))
+        .with_pattern(Pattern::new_solid_pattern(Color::new(1.0, 0.8, 0.1)))
         .with_diffuse(0.7)
         .with_specular(0.3);
     let left = ObjectBuilder::new_sphere()
@@ -57,7 +58,7 @@ fn main() {
     let wall1_t = Transformation::new_transform()
         .rotation_x(PI / 2.0)
         .translation(0.0, 0.0, 5.0);
-    let wall1_m = Material::new().with_color(Color::red());
+    let wall1_m = Material::new().with_pattern(Pattern::new_solid_pattern(Color::red()));
     let wall1 = ObjectBuilder::new_plane()
         .with_transform(wall1_t)
         .with_material(wall1_m)

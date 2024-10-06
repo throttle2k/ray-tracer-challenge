@@ -1,6 +1,9 @@
+use core::f64;
+
 use approx_eq::{ApproxEq, EPSILON};
 
 use crate::{
+    bounds::Bounds,
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -117,6 +120,13 @@ impl Cylinder {
                 xs.push(t);
             }
         }
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        Bounds::new(
+            Point::new(-1.0, self.minimum, -1.0),
+            Point::new(1.0, self.maximum, 1.0),
+        )
     }
 }
 

@@ -1,6 +1,7 @@
 use approx_eq::EPSILON;
 
 use crate::{
+    bounds::Bounds,
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -19,6 +20,13 @@ impl Plane {
             intersections.push(t);
         }
         intersections
+    }
+
+    pub fn bounds() -> crate::bounds::Bounds {
+        Bounds::new(
+            Point::new(f64::NEG_INFINITY, 0.0, f64::NEG_INFINITY),
+            Point::new(f64::INFINITY, 0.0, f64::INFINITY),
+        )
     }
 }
 

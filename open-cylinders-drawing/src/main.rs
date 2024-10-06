@@ -5,6 +5,7 @@ use ray_tracer::{
     camera::Camera,
     lights::PointLight,
     materials::Material,
+    patterns::Pattern,
     ppm::PPM,
     shapes::{cylinder::CylinderCap, Cylinder, ObjectBuilder},
     transformations::Transformation,
@@ -23,7 +24,7 @@ fn main() {
     )
     .with_material(
         Material::new()
-            .with_color(Color::new(0.722, 0.451, 0.20))
+            .with_pattern(Pattern::new_solid_pattern(Color::new(0.722, 0.451, 0.20)))
             .with_specular(1.0)
             .with_shininess(10.0)
             .with_reflective(0.9),
@@ -44,7 +45,7 @@ fn main() {
     )
     .with_material(
         Material::new()
-            .with_color(Color::new(0.722, 0.451, 0.20))
+            .with_pattern(Pattern::new_solid_pattern(Color::new(0.722, 0.451, 0.20)))
             .with_specular(1.0)
             .with_shininess(10.0)
             .with_reflective(0.9),
@@ -65,7 +66,7 @@ fn main() {
     )
     .with_material(
         Material::new()
-            .with_color(Color::new(0.722, 0.451, 0.20))
+            .with_pattern(Pattern::new_solid_pattern(Color::new(0.722, 0.451, 0.20)))
             .with_specular(1.0)
             .with_shininess(10.0)
             .with_reflective(0.9),
@@ -81,7 +82,7 @@ fn main() {
     .with_transform(Transformation::new_transform().translation(-10.5, 0.0, 10.0))
     .with_material(
         Material::new()
-            .with_color(Color::new(0.7922, 0.8, 0.8078))
+            .with_pattern(Pattern::new_solid_pattern(Color::new(0.7922, 0.8, 0.8078)))
             .with_diffuse(0.3)
             .with_specular(0.8)
             .with_shininess(10.0)
@@ -102,7 +103,7 @@ fn main() {
     )
     .with_material(
         Material::new()
-            .with_color(Color::new(0.7922, 0.8, 0.8078))
+            .with_pattern(Pattern::new_solid_pattern(Color::new(0.7922, 0.8, 0.8078)))
             .with_diffuse(0.3)
             .with_specular(0.8)
             .with_shininess(10.0)

@@ -3,6 +3,7 @@ use std::sync::RwLock;
 use lazy_static::lazy_static;
 use registry::Registry;
 
+pub mod bounds;
 pub mod camera;
 pub mod canvas;
 pub mod intersections;

@@ -5,6 +5,7 @@ use ray_tracer::{
     camera::Camera,
     lights::PointLight,
     materials::Material,
+    patterns::Pattern,
     ppm::PPM,
     shapes::ObjectBuilder,
     transformations::Transformation,
@@ -48,7 +49,7 @@ fn main() {
         .with_transform(Transformation::new_transform().scaling(200.0, 200.0, 200.0))
         .with_material(
             Material::new()
-                .with_color(Color::new(0.8, 0.8, 1.0))
+                .with_pattern(Pattern::new_solid_pattern(Color::new(0.8, 0.8, 1.0)))
                 .with_diffuse(0.3)
                 .with_ambient(0.2)
                 .with_specular(0.0)
@@ -61,7 +62,7 @@ fn main() {
     let rotation = PI / 6.0;
 
     let green_material = Material::new()
-        .with_color(Color::new(0.0, 0.8, 0.1))
+        .with_pattern(Pattern::new_solid_pattern(Color::new(0.0, 0.8, 0.1)))
         .with_specular(0.4)
         .with_reflective(0.7);
 
@@ -86,7 +87,7 @@ fn main() {
         )
         .with_material(
             Material::new()
-                .with_color(Color::white())
+                .with_pattern(Pattern::new_solid_pattern(Color::white()))
                 .with_diffuse(0.1)
                 .with_specular(1.0)
                 .with_shininess(1000.0)
@@ -95,7 +96,7 @@ fn main() {
         .register();
 
     let red_material = Material::new()
-        .with_color(Color::new(0.9, 0.0, 0.1))
+        .with_pattern(Pattern::new_solid_pattern(Color::new(0.9, 0.0, 0.1)))
         .with_diffuse(0.7)
         .with_reflective(0.7);
 
@@ -113,7 +114,7 @@ fn main() {
     let blue_cube = ObjectBuilder::new_cube()
         .with_material(
             Material::new()
-                .with_color(Color::new(0.0, 0.1, 0.8))
+                .with_pattern(Pattern::new_solid_pattern(Color::new(0.0, 0.1, 0.8)))
                 .with_reflective(0.7),
         )
         .with_transform(

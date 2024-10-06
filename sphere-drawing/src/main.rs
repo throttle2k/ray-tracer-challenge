@@ -5,6 +5,7 @@ use ray_tracer::{
     canvas::Canvas,
     lights::PointLight,
     materials::Material,
+    patterns::Pattern,
     ppm::PPM,
     rays::Ray,
     shapes::ObjectBuilder,
@@ -22,7 +23,9 @@ fn main() {
     let half = wall_size / 2.0;
     let canvas_mutex = Mutex::new(Canvas::new(canvas_pixels, canvas_pixels));
     let shape = ObjectBuilder::new_sphere()
-        .with_material(Material::new().with_color(Color::new(1.0, 0.2, 1.0)))
+        .with_material(
+            Material::new().with_pattern(Pattern::new_solid_pattern(Color::new(1.0, 0.2, 1.0))),
+        )
         .register();
     let registry = REGISTRY.read().unwrap();
     let shape = registry.get_object(shape).unwrap();

@@ -8,12 +8,11 @@ use colo_rs::colors::Color;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Material {
-    pub color: Color,
     pub ambient: f64,
     pub diffuse: f64,
     pub specular: f64,
     pub shininess: f64,
-    pub pattern: Option<Pattern>,
+    pub pattern: Pattern,
     pub reflective: f64,
     pub transparency: f64,
     pub refractive_index: f64,
@@ -24,23 +23,17 @@ pub struct Material {
 impl Material {
     pub fn new() -> Self {
         Self {
-            color: Color::new(1.0, 1.0, 1.0),
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
             shininess: 200.0,
-            pattern: None,
+            pattern: Pattern::new_solid_pattern(Color::white()),
             reflective: 0.0,
             transparency: 0.0,
             refractive_index: 1.0,
             cast_shadows: true,
             receive_shadows: true,
         }
-    }
-
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.color = color;
-        self
     }
 
     pub fn with_ambient(mut self, ambient: f64) -> Self {
@@ -63,8 +56,13 @@ impl Material {
         self
     }
 
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.pattern = Pattern::new_solid_pattern(color);
+        self
+    }
+
     pub fn with_pattern(mut self, pattern: Pattern) -> Self {
-        self.pattern = Some(pattern);
+        self.pattern = pattern;
         self
     }
 
@@ -102,12 +100,7 @@ impl Material {
         in_shadow: bool,
         object: &Object,
     ) -> Color {
-        let color = if let Some(pattern) = &self.pattern {
-            pattern.pattern_at_object(object, position)
-        } else {
-            self.color
-        };
-        let effective_color = &color * &light.intensity;
+        let effective_color = &self.pattern.pattern_at_object(object, position) * &light.intensity;
         let ambient = effective_color * self.ambient;
         let (diffuse, specular) = if in_shadow {
             (Color::black(), Color::black())
@@ -118,7 +111,8 @@ impl Material {
                 (Color::black(), Color::black())
             } else {
                 let diffuse = effective_color * self.diffuse * light_dot_normal;
-                let reflect_vector = (-light_vector).reflect(normal);
+                //let reflect_vector = (-light_vector).reflect(normal);
+                let reflect_vector = -light_vector - normal * 2.0 * -light_vector.dot(normal);
                 let reflect_dot_eye = reflect_vector.dot(eye);
                 let specular = if reflect_dot_eye <= 0.0 {
                     Color::black()
@@ -142,7 +136,10 @@ mod tests {
     #[test]
     fn default_material() {
         let m = Material::new();
-        assert_eq!(m.color, Color::new(1.0, 1.0, 1.0));
+        assert_eq!(
+            m.pattern,
+            Pattern::new_solid_pattern(Color::new(1.0, 1.0, 1.0))
+        );
         assert_eq!(m.ambient, 0.1);
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);

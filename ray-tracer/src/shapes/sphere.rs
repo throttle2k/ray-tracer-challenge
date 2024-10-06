@@ -1,4 +1,5 @@
 use crate::{
+    bounds::Bounds,
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -26,6 +27,10 @@ impl Sphere {
             result.push(t2);
             result
         }
+    }
+
+    pub fn bounds() -> Bounds {
+        Bounds::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))
     }
 }
 

@@ -5,6 +5,7 @@ use ray_tracer::{
     camera::Camera,
     lights::PointLight,
     materials::Material,
+    patterns::Pattern,
     ppm::PPM,
     shapes::ObjectBuilder,
     transformations::Transformation,
@@ -15,7 +16,7 @@ use ray_tracer::{
 fn main() {
     let floor_t = Transformation::new_transform().scaling(10.0, 0.01, 10.0);
     let floor_m = Material::new()
-        .with_color(Color::new(1.0, 0.9, 0.9))
+        .with_pattern(Pattern::new_solid_pattern(Color::new(1.0, 0.9, 0.9)))
         .with_specular(0.0);
     let floor = ObjectBuilder::new_sphere()
         .with_transform(floor_t)

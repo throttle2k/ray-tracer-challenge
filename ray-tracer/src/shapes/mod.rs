@@ -14,6 +14,7 @@ use plane::Plane;
 use sphere::Sphere;
 use test_shape::TestShape;
 
+use crate::bounds::Bounds;
 use crate::tuples::{points::Point, vectors::Vector};
 use crate::{
     intersections::{Intersection, Intersections},
@@ -83,6 +84,18 @@ impl Shape {
         }
         intersections
     }
+
+    fn bounds(&self) -> Bounds {
+        match self {
+            Shape::Sphere => Sphere::bounds(),
+            Shape::TestShape => TestShape::bounds(),
+            Shape::Plane => Plane::bounds(),
+            Shape::Cube => Cube::bounds(),
+            Shape::Cylinder(cyl) => cyl.bounds(),
+            Shape::Cone(cone) => cone.bounds(),
+            Shape::Group(group) => group.bounds(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -92,6 +105,7 @@ pub struct Object {
     material: Material,
     shape: Shape,
     parent: Option<usize>,
+    bounds: Bounds,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -111,7 +125,7 @@ impl ObjectBuilder {
             id,
             transform: Transformation::new_transform(),
             material: Material::new(),
-            shape,
+            shape: shape.clone(),
             parent: None,
         }
     }
@@ -180,12 +194,14 @@ impl ObjectBuilder {
     }
 
     pub fn register(&self) -> usize {
+        let bounds = self.shape.bounds().transform(&self.transform);
         let obj = Object {
             id: self.id,
             transform: self.transform.clone(),
             material: self.material.clone(),
             shape: self.shape.clone(),
             parent: self.parent,
+            bounds,
         };
         let mut registry = REGISTRY.write().unwrap();
         registry.add_object(obj);
@@ -258,6 +274,10 @@ impl Object {
 
     pub fn shape(&self) -> &Shape {
         &self.shape
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        self.bounds.clone()
     }
 }
 
@@ -468,5 +488,65 @@ mod tests {
         let s = registry.get_object(s).unwrap();
         let n = s.normal_at(Point::new(1.7321, 1.1547, -5.5774));
         assert_eq!(n, Vector::new(0.2857, 0.42854, -0.85716));
+    }
+
+    #[test]
+    fn ray_intersects_bounds_in_a_non_transformed_shape() {
+        let c = ObjectBuilder::new_cube().register();
+        let g = ObjectBuilder::new_group().add_child(c).register();
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
+        let registry = REGISTRY.read().unwrap();
+        let g = registry.get_object(g).unwrap();
+        dbg!(&g);
+        let xs = g.intersects(&r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 4.0);
+        assert_eq!(xs[1].t, 6.0);
+    }
+
+    #[test]
+    fn ray_intersects_bounds_in_a_transformed_shape() {
+        let c = ObjectBuilder::new_cube()
+            .with_transform(Transformation::new_transform().translation(-5.0, 0.0, 0.0))
+            .register();
+        let g = ObjectBuilder::new_group().add_child(c).register();
+        let r = Ray::new(Point::new(-5.0, 0.0, -5.0), Vector::z_norm());
+        let registry = REGISTRY.read().unwrap();
+        let g = registry.get_object(g).unwrap();
+        dbg!(&g);
+        let xs = g.intersects(&r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 4.0);
+        assert_eq!(xs[1].t, 6.0);
+    }
+
+    #[test]
+    fn ray_intersects_bounds_in_multiple_transformed_shapes() {
+        let c1 = ObjectBuilder::new_cube()
+            .with_transform(Transformation::new_transform().translation(-5.0, 0.0, 0.0))
+            .register();
+        let c2 = ObjectBuilder::new_cube()
+            .with_transform(Transformation::new_transform().translation(5.0, 0.0, 0.0))
+            .register();
+        let g = ObjectBuilder::new_group()
+            .add_child(c1)
+            .add_child(c2)
+            .register();
+        let r1 = Ray::new(Point::new(-5.0, 0.0, -5.0), Vector::z_norm());
+        let r2 = Ray::new(Point::new(5.0, 0.0, -5.0), Vector::z_norm());
+        let r0 = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
+        let registry = REGISTRY.read().unwrap();
+        let g = registry.get_object(g).unwrap();
+        dbg!(&g);
+        let xs1 = g.intersects(&r1);
+        let xs2 = g.intersects(&r2);
+        let xs0 = g.intersects(&r0);
+        assert_eq!(xs1.len(), 2);
+        assert_eq!(xs1[0].t, 4.0);
+        assert_eq!(xs1[1].t, 6.0);
+        assert_eq!(xs2.len(), 2);
+        assert_eq!(xs2[0].t, 4.0);
+        assert_eq!(xs2[1].t, 6.0);
+        assert_eq!(xs0.len(), 0);
     }
 }

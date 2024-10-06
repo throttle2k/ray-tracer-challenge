@@ -18,7 +18,7 @@ fn main() {
         .with_transform(Transformation::new_transform().translation(0.0, -1.0, 0.0))
         .with_material(
             Material::new()
-                .with_color(Color::new(1.0, 0.9, 0.9))
+                .with_pattern(Pattern::new_solid_pattern(Color::new(1.0, 0.9, 0.9)))
                 .with_specular(0.0)
                 .with_reflective(0.2)
                 .with_receive_shadows(false)
@@ -118,6 +118,14 @@ fn main() {
         )
         .register();
 
+    let g = ObjectBuilder::new_group()
+        .add_child(cone_1)
+        .add_child(cone_2)
+        .add_child(cone_3)
+        .add_child(cone_4)
+        .add_child(cone_5)
+        .register();
+
     let light_1 = PointLight::new(
         Point::new(-2.0, 5.0, -10.0),
         Color::new(1.0, 1.0, 1.0) / 2.0,
@@ -129,7 +137,7 @@ fn main() {
 
     let w = World::new()
         .with_lights(vec![light_1, light_2, light_3])
-        .with_objects(vec![floor, cone_1, cone_2, cone_3, cone_4, cone_5]);
+        .with_objects(vec![floor, g]);
 
     let c = Camera::new(1024, 768, PI / 3.0).with_transform(
         Transformation::view_transform(
