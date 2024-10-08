@@ -2,6 +2,7 @@ use approx_eq::EPSILON;
 
 use crate::{
     bounds::Bounds,
+    intersections::{Intersection, Intersections},
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -13,11 +14,11 @@ impl Plane {
         return Vector::y_norm();
     }
 
-    pub fn intersects(ray: Ray) -> Vec<f64> {
-        let mut intersections = Vec::new();
+    pub fn intersects(object_id: usize, ray: Ray) -> Intersections {
+        let mut intersections = Intersections::new();
         if ray.direction.y().abs() > EPSILON {
             let t = -ray.origin.y() / ray.direction.y();
-            intersections.push(t);
+            intersections.push(Intersection::new(t, object_id));
         }
         intersections
     }
@@ -32,7 +33,7 @@ impl Plane {
 
 #[cfg(test)]
 mod tests {
-    use crate::tuples::Tuple;
+    use crate::{shapes::ObjectBuilder, tuples::Tuple, REGISTRY};
 
     use super::*;
 
@@ -48,31 +49,43 @@ mod tests {
 
     #[test]
     fn intersect_with_a_ray_parallel_to_the_plane() {
+        let p = ObjectBuilder::new_plane().register();
+        let registry = REGISTRY.read().unwrap();
+        let p = registry.get_object(p).unwrap();
         let r = Ray::new(Point::new(0.0, 10.0, 0.0), Vector::z_norm());
-        let xs = Plane::intersects(r);
+        let xs = p.intersects(&r);
         assert!(xs.is_empty());
     }
 
     #[test]
     fn intersect_with_a_coplanar_ray() {
+        let p = ObjectBuilder::new_plane().register();
+        let registry = REGISTRY.read().unwrap();
+        let p = registry.get_object(p).unwrap();
         let r = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::z_norm());
-        let xs = Plane::intersects(r);
+        let xs = p.intersects(&r);
         assert!(xs.is_empty());
     }
 
     #[test]
     fn a_ray_intersecting_a_plane_from_above() {
+        let p = ObjectBuilder::new_plane().register();
+        let registry = REGISTRY.read().unwrap();
+        let p = registry.get_object(p).unwrap();
         let r = Ray::new(Point::new(0.0, 1.0, 0.0), Vector::new(0.0, -1.0, 0.0));
-        let xs = Plane::intersects(r);
+        let xs = p.intersects(&r);
         assert_eq!(xs.len(), 1);
-        assert_eq!(xs[0], 1.0);
+        assert_eq!(xs[0].t, 1.0);
     }
 
     #[test]
     fn a_ray_intersecting_a_plane_from_below() {
+        let p = ObjectBuilder::new_plane().register();
+        let registry = REGISTRY.read().unwrap();
+        let p = registry.get_object(p).unwrap();
         let r = Ray::new(Point::new(0.0, -1.0, 0.0), Vector::new(0.0, 1.0, 0.0));
-        let xs = Plane::intersects(r);
+        let xs = p.intersects(&r);
         assert_eq!(xs.len(), 1);
-        assert_eq!(xs[0], 1.0);
+        assert_eq!(xs[0].t, 1.0);
     }
 }

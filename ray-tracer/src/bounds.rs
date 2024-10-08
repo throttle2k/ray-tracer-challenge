@@ -103,6 +103,15 @@ impl Bounds {
             .add_point(&transformation.matrix * &p7)
             .add_point(&transformation.matrix * &p8)
     }
+
+    pub fn contains(&self, other: &Bounds) -> bool {
+        self.min().x() <= other.min().x()
+            && self.min().y() <= other.min().y()
+            && self.min().z() <= other.min().z()
+            && self.max().x() > other.max().x()
+            && self.max().y() > other.max().y()
+            && self.max().z() > other.max().z()
+    }
 }
 
 impl Default for Bounds {

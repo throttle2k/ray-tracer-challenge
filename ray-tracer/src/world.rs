@@ -1,12 +1,18 @@
+use core::panic;
+use std::f64::{INFINITY, NEG_INFINITY};
+
 use approx_eq::ApproxEq;
 use colo_rs::colors::Color;
 
 use crate::{
+    bounds::Bounds,
     intersections::{Computation, Intersections},
     lights::PointLight,
     materials::Material,
+    octree::Octree,
     patterns::Pattern,
     rays::Ray,
+    registry,
     shapes::ObjectBuilder,
     transformations::Transformation,
     tuples::{points::Point, Tuple},
@@ -17,6 +23,7 @@ use crate::{
 pub struct World {
     lights: Vec<PointLight>,
     objects: Vec<usize>,
+    octree: Option<Octree>,
 }
 
 impl Default for World {
@@ -31,7 +38,11 @@ impl Default for World {
         let t2 = Transformation::new_transform().scaling(0.5, 0.5, 0.5);
         let s2 = ObjectBuilder::new_sphere().with_transform(t2).register();
         let objects = vec![s1, s2];
-        Self { lights, objects }
+        Self {
+            lights,
+            objects,
+            octree: None,
+        }
     }
 }
 
@@ -40,6 +51,7 @@ impl World {
         Self {
             lights: Vec::new(),
             objects: Vec::new(),
+            octree: None,
         }
     }
 
@@ -53,6 +65,41 @@ impl World {
         self
     }
 
+    pub fn with_octree(mut self) -> Self {
+        let registry = REGISTRY.read().unwrap();
+        let mut min_x = INFINITY;
+        let mut min_y = INFINITY;
+        let mut min_z = INFINITY;
+        let mut max_x = NEG_INFINITY;
+        let mut max_y = NEG_INFINITY;
+        let mut max_z = NEG_INFINITY;
+        for obj in &self.objects {
+            let obj = registry.get_object(*obj).unwrap();
+            min_x = min_x.min(obj.bounds().min().x());
+            min_y = min_y.min(obj.bounds().min().y());
+            min_z = min_z.min(obj.bounds().min().z());
+            max_x = max_x.max(obj.bounds().max().x());
+            max_y = max_y.max(obj.bounds().max().y());
+            max_z = max_z.max(obj.bounds().max().z());
+        }
+        let min = min_x.min(min_y.min(min_z)).floor();
+        let max = max_x.max(max_y.max(max_z)).ceil();
+        let size = min.abs().max(max.abs());
+        let mut pow_2 = 2.0;
+        while size > pow_2 {
+            pow_2 = pow_2.powi(2);
+        }
+
+        self.octree = Octree::default()
+            .with_region(Bounds::new(
+                Point::new(-pow_2, -pow_2, -pow_2),
+                Point::new(pow_2, pow_2, pow_2),
+            ))
+            .with_objects(registry.object_ids())
+            .build();
+        self
+    }
+
     pub fn lights(&self) -> &[PointLight] {
         &self.lights
     }
@@ -63,11 +110,16 @@ impl World {
 
     pub fn intersect_world(&self, ray: Ray) -> Intersections {
         let mut xs = Intersections::new();
-        let registry = REGISTRY.read().unwrap();
-        self.objects
-            .iter()
-            .map(|&id| registry.get_object(id).unwrap())
-            .for_each(|obj| xs.push_all(obj.intersects(&ray)));
+
+        if let Some(octree) = &self.octree {
+            xs = octree.intersects(&ray);
+        } else {
+            let registry = REGISTRY.read().unwrap();
+            self.objects
+                .iter()
+                .map(|&id| registry.get_object(id).unwrap())
+                .for_each(|obj| xs.push_all(obj.intersects(&ray)));
+        }
         xs.sort_by(|i1, i2| i1.t.total_cmp(&i2.t));
         xs
     }

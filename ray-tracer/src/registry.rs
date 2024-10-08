@@ -31,4 +31,8 @@ impl Registry {
         self.objects.push(obj);
         self.objects.len()
     }
+
+    pub fn object_ids(&self) -> Vec<usize> {
+        self.objects.iter().map(|obj| obj.id).collect()
+    }
 }

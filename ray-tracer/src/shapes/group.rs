@@ -53,6 +53,10 @@ impl Group {
                 bounds + object.bounds()
             })
     }
+
+    pub fn children(&self) -> &[usize] {
+        &self.children
+    }
 }
 
 impl Deref for Group {

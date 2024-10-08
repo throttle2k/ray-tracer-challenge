@@ -11,6 +11,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.89"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86fdf8605db99b54d3cd748a44c6d04df638eb5dafb219b135d0149bd0db01f6"
+
+[[package]]
 name = "approx-eq"
 version = "0.1.0"
 
@@ -110,6 +116,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "561d97a539a36e26a9a5fad1ea11a3039a67714694aaa379433e580854bc3dc5"
 
 [[package]]
+name = "obj-drawing"
+version = "0.1.0"
+dependencies = [
+ "colo-rs",
+ "ray-tracer",
+]
+
+[[package]]
 name = "open-cylinders-drawing"
 version = "0.1.0"
 dependencies = [
@@ -194,6 +208,7 @@ checksum = "9c33a3c44ca05fa6f1807d8e6743f3824e8509beca625669633be0acbdf509dc"
 name = "ray-tracer"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "approx-eq",
  "colo-rs",
  "lazy_static",

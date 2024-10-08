@@ -2,6 +2,7 @@ use approx_eq::{ApproxEq, EPSILON};
 
 use crate::{
     bounds::Bounds,
+    intersections::{Intersection, Intersections},
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -75,41 +76,43 @@ impl Cone {
         }
     }
 
-    pub fn intersects(&self, r: Ray) -> Vec<f64> {
+    pub fn intersects(&self, object_id: usize, r: Ray) -> Intersections {
         let a = r.direction.x().powi(2) - r.direction.y().powi(2) + r.direction.z().powi(2);
         let b = 2.0 * r.origin.x() * r.direction.x() - 2.0 * r.origin.y() * r.direction.y()
             + 2.0 * r.origin.z() * r.direction.z();
         let c = r.origin.x().powi(2) - r.origin.y().powi(2) + r.origin.z().powi(2);
-        let mut xs = if a.approx_eq(0.0) {
+        let mut intersections = if a.approx_eq(0.0) {
             if b.approx_eq(0.0) {
-                Vec::new()
+                Intersections::new()
             } else {
                 let t = -c / (2.0 * b);
-                vec![t]
+                let mut xs = Intersections::new();
+                xs.push(Intersection::new(t, object_id));
+                xs
             }
         } else {
             let discriminant = b.powi(2) - 4.0 * a * c;
 
             if discriminant < 0.0 {
-                Vec::new()
+                Intersections::new()
             } else {
                 let t0 = (-b - (discriminant.sqrt())) / (2.0 * a);
                 let t1 = (-b + (discriminant.sqrt())) / (2.0 * a);
                 let (t0, t1) = if t0 > t1 { (t1, t0) } else { (t0, t1) };
-                let mut xs = Vec::new();
+                let mut xs = Intersections::new();
                 let y0 = r.origin.y() + t0 * r.direction.y();
                 if self.minimum < y0 && y0 < self.maximum {
-                    xs.push(t0);
+                    xs.push(Intersection::new(t0, object_id));
                 }
                 let y1 = r.origin.y() + t1 * r.direction.y();
                 if self.minimum < y1 && y1 < self.maximum {
-                    xs.push(t1);
+                    xs.push(Intersection::new(t1, object_id));
                 }
                 xs
             }
         };
-        self.intersects_caps(r, &mut xs);
-        xs
+        self.intersects_caps(object_id, r, &mut intersections);
+        intersections
     }
 
     fn check_cap(r: Ray, t: f64, radius: f64) -> bool {
@@ -118,20 +121,20 @@ impl Cone {
         x.powi(2) + z.powi(2) <= radius.powi(2)
     }
 
-    fn intersects_caps(&self, r: Ray, xs: &mut Vec<f64>) {
+    fn intersects_caps(&self, object_id: usize, r: Ray, xs: &mut Intersections) {
         if self.cap == ConeCap::Uncapped || r.direction.y().approx_eq(0.0) {
             return;
         }
         if self.cap == ConeCap::Both || self.cap == ConeCap::BottomCap {
             let t = (self.minimum - r.origin.y()) / r.direction.y();
             if Cone::check_cap(r, t, self.minimum) {
-                xs.push(t);
+                xs.push(Intersection::new(t, object_id));
             }
         }
         if self.cap == ConeCap::Both || self.cap == ConeCap::TopCap {
             let t = (self.maximum - r.origin.y()) / r.direction.y();
             if Cone::check_cap(r, t, self.maximum) {
-                xs.push(t);
+                xs.push(Intersection::new(t, object_id));
             }
         }
     }
@@ -148,14 +151,19 @@ impl Cone {
 mod tests {
     use std::f64::{INFINITY, NEG_INFINITY};
 
+    use crate::{shapes::ObjectBuilder, REGISTRY};
+
     use super::*;
     use yare::parameterized;
 
     #[test]
     fn a_ray_misses_a_cone() {
         let cone = Cone::default();
+        let cone = ObjectBuilder::new_cone(cone).register();
+        let registry = REGISTRY.read().unwrap();
+        let cone = registry.get_object(cone).unwrap();
         let r = Ray::new(Point::new(1.0, 0.0, 0.0), Vector::z_norm());
-        let xs = cone.intersects(r);
+        let xs = cone.intersects(&r);
         assert_eq!(xs.len(), 0);
     }
 
@@ -166,22 +174,28 @@ mod tests {
     )]
     fn a_ray_strikes_a_cone(origin: Point, direction: Vector, t0: f64, t1: f64) {
         let cone = Cone::default();
+        let cone = ObjectBuilder::new_cone(cone).register();
+        let registry = REGISTRY.read().unwrap();
+        let cone = registry.get_object(cone).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(origin, direction);
-        let xs = cone.intersects(r);
+        let xs = cone.intersects(&r);
         assert_eq!(xs.len(), 2);
-        assert!(xs[0].approx_eq(t0));
-        assert!(xs[1].approx_eq(t1))
+        assert!(xs[0].t.approx_eq(t0));
+        assert!(xs[1].t.approx_eq(t1))
     }
 
     #[test]
     fn intersecting_a_cone_with_a_ray_parallel_to_one_of_its_halves() {
         let cone = Cone::default();
+        let cone = ObjectBuilder::new_cone(cone).register();
+        let registry = REGISTRY.read().unwrap();
+        let cone = registry.get_object(cone).unwrap();
         let direction = Vector::new(0.0, 1.0, 1.0).normalize();
         let r = Ray::new(Point::new(0.0, 0.0, -1.0), direction);
-        let xs = cone.intersects(r);
+        let xs = cone.intersects(&r);
         assert_eq!(xs.len(), 1);
-        assert!(xs[0].approx_eq(0.35355));
+        assert!(xs[0].t.approx_eq(0.35355));
     }
 
     #[parameterized(
@@ -210,9 +224,12 @@ mod tests {
     )]
     fn intersecting_a_constrained_cone(point: Point, direction: Vector, count: usize) {
         let cone = Cone::default().with_minimum(-0.5).with_maximum(0.5);
+        let cone = ObjectBuilder::new_cone(cone).register();
+        let registry = REGISTRY.read().unwrap();
+        let cone = registry.get_object(cone).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cone.intersects(r);
+        let xs = cone.intersects(&r);
         assert_eq!(xs.len(), count);
     }
 
@@ -226,9 +243,12 @@ mod tests {
             .with_minimum(-0.5)
             .with_maximum(0.5)
             .with_cap(ConeCap::Both);
+        let cone = ObjectBuilder::new_cone(cone).register();
+        let registry = REGISTRY.read().unwrap();
+        let cone = registry.get_object(cone).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cone.intersects(r);
+        let xs = cone.intersects(&r);
         assert_eq!(xs.len(), count);
     }
 
@@ -242,9 +262,12 @@ mod tests {
             .with_minimum(-0.5)
             .with_maximum(0.5)
             .with_cap(ConeCap::BottomCap);
+        let cone = ObjectBuilder::new_cone(cone).register();
+        let registry = REGISTRY.read().unwrap();
+        let cone = registry.get_object(cone).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cone.intersects(r);
+        let xs = cone.intersects(&r);
         assert_eq!(xs.len(), count);
     }
 
@@ -258,9 +281,12 @@ mod tests {
             .with_minimum(-0.5)
             .with_maximum(0.5)
             .with_cap(ConeCap::TopCap);
+        let cone = ObjectBuilder::new_cone(cone).register();
+        let registry = REGISTRY.read().unwrap();
+        let cone = registry.get_object(cone).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cone.intersects(r);
+        let xs = cone.intersects(&r);
         assert_eq!(xs.len(), count);
     }
 

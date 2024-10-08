@@ -4,6 +4,7 @@ use approx_eq::{ApproxEq, EPSILON};
 
 use crate::{
     bounds::Bounds,
+    intersections::{Intersection, Intersections},
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -67,35 +68,35 @@ impl Cylinder {
         }
     }
 
-    pub fn intersects(&self, r: Ray) -> Vec<f64> {
+    pub fn intersects(&self, object_id: usize, r: Ray) -> Intersections {
         let a = r.direction.x().powi(2) + r.direction.z().powi(2);
-        let mut xs = if a.approx_eq(0.0) {
-            Vec::new()
+        let mut intersections = if a.approx_eq(0.0) {
+            Intersections::new()
         } else {
             let b = 2.0 * r.origin.x() * r.direction.x() + 2.0 * r.origin.z() * r.direction.z();
             let c = r.origin.x().powi(2) + r.origin.z().powi(2) - 1.0;
             let discriminant = b.powi(2) - 4.0 * a * c;
 
             if discriminant < 0.0 {
-                Vec::new()
+                Intersections::new()
             } else {
                 let t0 = (-b - (discriminant.sqrt())) / (2.0 * a);
                 let t1 = (-b + (discriminant.sqrt())) / (2.0 * a);
                 let (t0, t1) = if t0 > t1 { (t1, t0) } else { (t0, t1) };
-                let mut xs = Vec::new();
+                let mut xs = Intersections::new();
                 let y0 = r.origin.y() + t0 * r.direction.y();
                 if self.minimum < y0 && y0 < self.maximum {
-                    xs.push(t0);
+                    xs.push(Intersection::new(t0, object_id));
                 }
                 let y1 = r.origin.y() + t1 * r.direction.y();
                 if self.minimum < y1 && y1 < self.maximum {
-                    xs.push(t1);
+                    xs.push(Intersection::new(t1, object_id));
                 }
                 xs
             }
         };
-        self.intersects_caps(r, &mut xs);
-        xs
+        self.intersects_caps(object_id, r, &mut intersections);
+        intersections
     }
 
     fn check_cap(r: Ray, t: f64) -> bool {
@@ -104,20 +105,20 @@ impl Cylinder {
         x.powi(2) + z.powi(2) <= 1.0
     }
 
-    fn intersects_caps(&self, r: Ray, xs: &mut Vec<f64>) {
+    fn intersects_caps(&self, object_id: usize, r: Ray, xs: &mut Intersections) {
         if self.cap == CylinderCap::Uncapped {
             return;
         }
         if self.cap == CylinderCap::Both || self.cap == CylinderCap::BottomCap {
             let t = (self.minimum - r.origin.y()) / r.direction.y();
             if Cylinder::check_cap(r, t) {
-                xs.push(t);
+                xs.push(Intersection::new(t, object_id));
             }
         }
         if self.cap == CylinderCap::Both || self.cap == CylinderCap::TopCap {
             let t = (self.maximum - r.origin.y()) / r.direction.y();
             if Cylinder::check_cap(r, t) {
-                xs.push(t);
+                xs.push(Intersection::new(t, object_id));
             }
         }
     }
@@ -134,6 +135,8 @@ impl Cylinder {
 mod tests {
     use std::f64::{INFINITY, NEG_INFINITY};
 
+    use crate::{shapes::ObjectBuilder, REGISTRY};
+
     use super::*;
     use yare::parameterized;
 
@@ -144,9 +147,12 @@ mod tests {
     )]
     fn a_ray_misses_a_cylinder(origin: Point, direction: Vector) {
         let cyl = Cylinder::default();
+        let cyl = ObjectBuilder::new_cylinder(cyl).register();
+        let registry = REGISTRY.read().unwrap();
+        let cyl = registry.get_object(cyl).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(origin, direction);
-        let xs = cyl.intersects(r);
+        let xs = cyl.intersects(&r);
         assert_eq!(xs.len(), 0);
     }
 
@@ -157,12 +163,15 @@ mod tests {
     )]
     fn a_ray_strikes_a_cylinder(origin: Point, direction: Vector, t0: f64, t1: f64) {
         let cyl = Cylinder::default();
+        let cyl = ObjectBuilder::new_cylinder(cyl).register();
+        let registry = REGISTRY.read().unwrap();
+        let cyl = registry.get_object(cyl).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(origin, direction);
-        let xs = cyl.intersects(r);
+        let xs = cyl.intersects(&r);
         assert_eq!(xs.len(), 2);
-        assert!(xs[0].approx_eq(t0));
-        assert!(xs[1].approx_eq(t1))
+        assert!(xs[0].t.approx_eq(t0));
+        assert!(xs[1].t.approx_eq(t1))
     }
 
     #[parameterized(
@@ -195,9 +204,12 @@ mod tests {
     )]
     fn intersecting_a_constrained_cylinder(point: Point, direction: Vector, count: usize) {
         let cyl = Cylinder::default().with_minimum(1.0).with_maximum(2.0);
+        let cyl = ObjectBuilder::new_cylinder(cyl).register();
+        let registry = REGISTRY.read().unwrap();
+        let cyl = registry.get_object(cyl).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cyl.intersects(r);
+        let xs = cyl.intersects(&r);
         assert_eq!(xs.len(), count);
     }
 
@@ -213,9 +225,12 @@ mod tests {
             .with_minimum(1.0)
             .with_maximum(2.0)
             .with_cap(CylinderCap::Both);
+        let cyl = ObjectBuilder::new_cylinder(cyl).register();
+        let registry = REGISTRY.read().unwrap();
+        let cyl = registry.get_object(cyl).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cyl.intersects(r);
+        let xs = cyl.intersects(&r);
         assert_eq!(xs.len(), 2);
     }
 
@@ -235,9 +250,12 @@ mod tests {
             .with_minimum(1.0)
             .with_maximum(2.0)
             .with_cap(CylinderCap::BottomCap);
+        let cyl = ObjectBuilder::new_cylinder(cyl).register();
+        let registry = REGISTRY.read().unwrap();
+        let cyl = registry.get_object(cyl).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cyl.intersects(r);
+        let xs = cyl.intersects(&r);
         assert_eq!(xs.len(), count);
     }
 
@@ -257,9 +275,12 @@ mod tests {
             .with_minimum(1.0)
             .with_maximum(2.0)
             .with_cap(CylinderCap::TopCap);
+        let cyl = ObjectBuilder::new_cylinder(cyl).register();
+        let registry = REGISTRY.read().unwrap();
+        let cyl = registry.get_object(cyl).unwrap();
         let direction = direction.normalize();
         let r = Ray::new(point, direction);
-        let xs = cyl.intersects(r);
+        let xs = cyl.intersects(&r);
         assert_eq!(xs.len(), count);
     }
 

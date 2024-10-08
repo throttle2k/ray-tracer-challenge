@@ -5,6 +5,7 @@ mod group;
 mod plane;
 mod sphere;
 mod test_shape;
+mod triangle;
 
 pub use cone::{Cone, ConeCap};
 use cube::Cube;
@@ -13,14 +14,12 @@ use group::Group;
 use plane::Plane;
 use sphere::Sphere;
 use test_shape::TestShape;
+use triangle::Triangle;
 
 use crate::bounds::Bounds;
 use crate::tuples::{points::Point, vectors::Vector};
 use crate::{
-    intersections::{Intersection, Intersections},
-    materials::Material,
-    rays::Ray,
-    transformations::Transformation,
+    intersections::Intersections, materials::Material, rays::Ray, transformations::Transformation,
     REGISTRY,
 };
 
@@ -33,6 +32,7 @@ pub enum Shape {
     Cylinder(Cylinder),
     Cone(Cone),
     Group(Group),
+    Triangle(Triangle),
 }
 
 impl Shape {
@@ -45,44 +45,21 @@ impl Shape {
             Shape::Cylinder(cyl) => cyl.normal_at(object_point),
             Shape::Cone(cone) => cone.normal_at(object_point),
             Shape::Group(group) => group.normal_at(object_point),
+            Shape::Triangle(triangle) => triangle.normal_at(object_point),
         }
     }
 
     fn intersect(&self, object_id: usize, ray: Ray) -> Intersections {
-        let mut intersections = Intersections::new();
         match self {
             Shape::TestShape => unreachable!(),
-            Shape::Sphere => {
-                let xs = Sphere::intersect(ray);
-                xs.iter()
-                    .for_each(|x| intersections.push(Intersection::new(*x, object_id)));
-            }
-            Shape::Plane => {
-                let xs = Plane::intersects(ray);
-                xs.iter()
-                    .for_each(|x| intersections.push(Intersection::new(*x, object_id)));
-            }
-            Shape::Cube => {
-                let xs = Cube::intersects(ray);
-                xs.iter()
-                    .for_each(|x| intersections.push(Intersection::new(*x, object_id)));
-            }
-            Shape::Cylinder(cyl) => {
-                let xs = cyl.intersects(ray);
-                xs.iter()
-                    .for_each(|x| intersections.push(Intersection::new(*x, object_id)));
-            }
-            Shape::Cone(cone) => {
-                let xs = cone.intersects(ray);
-                xs.iter()
-                    .for_each(|x| intersections.push(Intersection::new(*x, object_id)));
-            }
-            Shape::Group(group) => {
-                let xs = group.intersects(ray);
-                xs.iter().for_each(|x| intersections.push(*x));
-            }
+            Shape::Sphere => Sphere::intersect(object_id, ray),
+            Shape::Plane => Plane::intersects(object_id, ray),
+            Shape::Cube => Cube::intersects(object_id, ray),
+            Shape::Cylinder(cyl) => cyl.intersects(object_id, ray),
+            Shape::Cone(cone) => cone.intersects(object_id, ray),
+            Shape::Group(group) => group.intersects(ray),
+            Shape::Triangle(triangle) => triangle.intersects(object_id, ray),
         }
-        intersections
     }
 
     fn bounds(&self) -> Bounds {
@@ -94,6 +71,7 @@ impl Shape {
             Shape::Cylinder(cyl) => cyl.bounds(),
             Shape::Cone(cone) => cone.bounds(),
             Shape::Group(group) => group.bounds(),
+            Shape::Triangle(triangle) => triangle.bounds(),
         }
     }
 }
@@ -166,6 +144,11 @@ impl ObjectBuilder {
     pub fn new_group() -> Self {
         let group = Group::new();
         Self::new(Shape::Group(group))
+    }
+
+    pub fn new_triangle(p1: Point, p2: Point, p3: Point) -> Self {
+        let t = Triangle::new(p1, p2, p3);
+        Self::new(Shape::Triangle(t))
     }
 
     pub fn with_transform(mut self, transform: Transformation) -> Self {
@@ -278,6 +261,43 @@ impl Object {
 
     pub fn bounds(&self) -> Bounds {
         self.bounds.clone()
+    }
+
+    pub fn p1(&self) -> Point {
+        match &self.shape {
+            Shape::Triangle(t) => t.p1(),
+            _ => panic!(),
+        }
+    }
+    pub fn p2(&self) -> Point {
+        match &self.shape {
+            Shape::Triangle(t) => t.p2(),
+            _ => panic!(),
+        }
+    }
+    pub fn p3(&self) -> Point {
+        match &self.shape {
+            Shape::Triangle(t) => t.p3(),
+            _ => panic!(),
+        }
+    }
+    pub fn e1(&self) -> Vector {
+        match &self.shape {
+            Shape::Triangle(t) => t.e1(),
+            _ => panic!(),
+        }
+    }
+    pub fn e2(&self) -> Vector {
+        match &self.shape {
+            Shape::Triangle(t) => t.e2(),
+            _ => panic!(),
+        }
+    }
+    pub fn normal(&self) -> Vector {
+        match &self.shape {
+            Shape::Triangle(t) => t.normal(),
+            _ => panic!(),
+        }
     }
 }
 
@@ -497,7 +517,6 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
         let registry = REGISTRY.read().unwrap();
         let g = registry.get_object(g).unwrap();
-        dbg!(&g);
         let xs = g.intersects(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
@@ -513,7 +532,6 @@ mod tests {
         let r = Ray::new(Point::new(-5.0, 0.0, -5.0), Vector::z_norm());
         let registry = REGISTRY.read().unwrap();
         let g = registry.get_object(g).unwrap();
-        dbg!(&g);
         let xs = g.intersects(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
@@ -537,7 +555,6 @@ mod tests {
         let r0 = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
         let registry = REGISTRY.read().unwrap();
         let g = registry.get_object(g).unwrap();
-        dbg!(&g);
         let xs1 = g.intersects(&r1);
         let xs2 = g.intersects(&r2);
         let xs0 = g.intersects(&r0);

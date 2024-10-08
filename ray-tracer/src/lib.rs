@@ -10,6 +10,8 @@ pub mod intersections;
 pub mod lights;
 pub mod materials;
 pub mod matrix;
+pub mod obj_parser;
+pub mod octree;
 pub mod patterns;
 pub mod ppm;
 pub mod rays;

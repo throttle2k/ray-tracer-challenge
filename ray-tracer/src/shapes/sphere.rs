@@ -1,5 +1,6 @@
 use crate::{
     bounds::Bounds,
+    intersections::{Intersection, Intersections},
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -11,21 +12,21 @@ impl Sphere {
         object_point - Point::zero()
     }
 
-    pub fn intersect(ray: Ray) -> Vec<f64> {
+    pub fn intersect(object_id: usize, ray: Ray) -> Intersections {
         let sphere_to_ray = ray.origin - Point::new(0.0, 0.0, 0.0);
         let a = ray.direction.dot(ray.direction);
         let b = 2.0 * ray.direction.dot(sphere_to_ray);
         let c = sphere_to_ray.dot(sphere_to_ray) - 1.0;
         let discriminant = b * b - 4.0 * a * c;
-        let mut result = Vec::new();
         if discriminant < 0.0 {
-            result
+            Intersections::new()
         } else {
+            let mut xs = Intersections::new();
             let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
             let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
-            result.push(t1);
-            result.push(t2);
-            result
+            xs.push(Intersection::new(t1, object_id));
+            xs.push(Intersection::new(t2, object_id));
+            xs
         }
     }
 

@@ -2,6 +2,7 @@ use approx_eq::ApproxEq;
 
 use crate::{
     bounds::Bounds,
+    intersections::{Intersection, Intersections},
     rays::Ray,
     tuples::{points::Point, vectors::Vector, Tuple},
 };
@@ -39,7 +40,7 @@ impl Cube {
         }
     }
 
-    pub fn intersects(ray: Ray) -> Vec<f64> {
+    pub fn intersects(object_id: usize, ray: Ray) -> Intersections {
         let (xtmin, xtmax) = Cube::check_axis(ray.origin.x(), ray.direction.x());
         let (ytmin, ytmax) = Cube::check_axis(ray.origin.y(), ray.direction.y());
         let (ztmin, ztmax) = Cube::check_axis(ray.origin.z(), ray.direction.z());
@@ -51,11 +52,12 @@ impl Cube {
             .into_iter()
             .min_by(|a, b| a.total_cmp(b))
             .unwrap();
-        if tmin > tmax {
-            Vec::new()
-        } else {
-            vec![tmin, tmax]
+        let mut intersections = Intersections::new();
+        if tmin <= tmax {
+            intersections.push(Intersection::new(tmin, object_id));
+            intersections.push(Intersection::new(tmax, object_id));
         }
+        intersections
     }
 
     pub fn bounds() -> Bounds {
@@ -65,93 +67,61 @@ impl Cube {
 
 #[cfg(test)]
 mod tests {
+    use yare::parameterized;
+
+    use crate::{shapes::ObjectBuilder, REGISTRY};
+
     use super::*;
 
-    #[test]
-    fn a_ray_intersects_a_cube() {
-        let examples = vec![
-            (
-                (Point::new(5.0, 0.5, 0.0), Vector::new(-1.0, 0.0, 0.0)),
-                (4.0, 6.0),
-            ),
-            (
-                (Point::new(-5.0, 0.5, 0.0), Vector::new(1.0, 0.0, 0.0)),
-                (4.0, 6.0),
-            ),
-            (
-                (Point::new(0.5, 5.0, 0.0), Vector::new(0.0, -1.0, 0.0)),
-                (4.0, 6.0),
-            ),
-            (
-                (Point::new(0.5, -5.0, 0.0), Vector::new(0.0, 1.0, 0.0)),
-                (4.0, 6.0),
-            ),
-            (
-                (Point::new(0.5, 0.0, 5.0), Vector::new(0.0, 0.0, -1.0)),
-                (4.0, 6.0),
-            ),
-            (
-                (Point::new(0.5, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0)),
-                (4.0, 6.0),
-            ),
-            (
-                (Point::new(0.0, 0.5, 0.0), Vector::new(0.0, 0.0, 1.0)),
-                (-1.0, 1.0),
-            ),
-        ];
-
-        for example in examples {
-            let r = Ray::new(example.0 .0, example.0 .1);
-            let xs = Cube::intersects(r);
-            assert_eq!(xs.len(), 2);
-            assert_eq!(xs[0], example.1 .0);
-            assert_eq!(xs[1], example.1 .1);
-        }
+    #[parameterized(
+        strike_along_x_neg_axis = {Point::new(5.0, 0.5, 0.0), Vector::new(-1.0, 0.0, 0.0), 4.0, 6.0},
+        strike_along_x_axis = {Point::new(-5.0, 0.5, 0.0), Vector::new(1.0, 0.0, 0.0), 4.0, 6.0},
+        strike_along_y_neg_axis = {Point::new(0.5, 5.0, 0.0), Vector::new(0.0, -1.0, 0.0), 4.0, 6.0},
+        strike_along_y_axis = {Point::new(0.5, -5.0, 0.0), Vector::new(0.0, 1.0, 0.0), 4.0, 6.0},
+        strike_along_z_neg_axis = {Point::new(0.5, 0.0, 5.0), Vector::new(0.0, 0.0, -1.0), 4.0, 6.0},
+        strike_along_z_axis = {Point::new(0.5, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0), 4.0, 6.0},
+        strike_along_edge = {Point::new(0.0, 0.5, 0.0), Vector::new(0.0, 0.0, 1.0), -1.0, 1.0},
+    )]
+    fn a_ray_intersects_a_cube(origin: Point, direction: Vector, t0: f64, t1: f64) {
+        let cube = ObjectBuilder::new_cube().register();
+        let registry = REGISTRY.read().unwrap();
+        let cube = registry.get_object(cube).unwrap();
+        let r = Ray::new(origin, direction);
+        let xs = cube.intersects(&r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, t0);
+        assert_eq!(xs[1].t, t1);
     }
 
-    #[test]
-    fn a_ray_misses_a_cube() {
-        let examples = vec![
-            ((
-                Point::new(-2.0, 0.0, 0.0),
-                Vector::new(0.2673, 0.5345, 0.8018),
-            ),),
-            ((
-                Point::new(0.0, -2.0, 0.0),
-                Vector::new(0.8018, 0.2673, 0.5345),
-            ),),
-            ((
-                Point::new(0.0, 0.0, -2.0),
-                Vector::new(0.5345, 0.8018, 0.2673),
-            ),),
-            ((Point::new(2.0, 0.0, 2.0), Vector::new(0.0, 0.0, -1.0)),),
-            ((Point::new(0.0, 2.0, 2.0), Vector::new(0.0, -1.0, 0.0)),),
-            ((Point::new(2.0, 2.0, 0.0), Vector::new(-1.0, 0.0, 0.0)),),
-        ];
-
-        for example in examples {
-            let r = Ray::new(example.0 .0, example.0 .1);
-            let xs = Cube::intersects(r);
-            assert!(xs.is_empty());
-        }
+    #[parameterized(
+        miss_1 = {Point::new(-2.0, 0.0, 0.0), Vector::new(0.2673, 0.5345, 0.8018)},
+        miss_2 = {Point::new(0.0, -2.0, 0.0), Vector::new(0.8018, 0.2673, 0.5345)},
+        miss_3 = {Point::new(0.0, 0.0, -2.0), Vector::new(0.5345, 0.8018, 0.2673)},
+        miss_along_z_axis = {Point::new(2.0, 0.0, 2.0), Vector::new(0.0, 0.0, -1.0)},
+        miss_along_y_axis = {Point::new(0.0, 2.0, 2.0), Vector::new(0.0, -1.0, 0.0)},
+        miss_along_x_axis = {Point::new(2.0, 2.0, 0.0), Vector::new(-1.0, 0.0, 0.0)},
+    )]
+    fn a_ray_misses_a_cube(origin: Point, direction: Vector) {
+        let cube = ObjectBuilder::new_cube().register();
+        let registry = REGISTRY.read().unwrap();
+        let cube = registry.get_object(cube).unwrap();
+        let r = Ray::new(origin, direction);
+        let xs = cube.intersects(&r);
+        assert!(xs.is_empty());
     }
 
-    #[test]
-    fn the_normal_of_the_surface_of_a_cube() {
-        let examples = vec![
-            (Point::new(1.0, 0.5, -0.8), Vector::new(1.0, 0.0, 0.0)),
-            (Point::new(-1.0, -0.2, 0.9), Vector::new(-1.0, 0.0, 0.0)),
-            (Point::new(-0.4, 1.0, -0.1), Vector::new(0.0, 1.0, 0.0)),
-            (Point::new(0.3, -1.0, -0.7), Vector::new(0.0, -1.0, 0.0)),
-            (Point::new(-0.6, 0.3, 1.0), Vector::new(0.0, 0.0, 1.0)),
-            (Point::new(0.4, 0.4, -1.0), Vector::new(0.0, 0.0, -1.0)),
-            (Point::new(1.0, 1.0, 1.0), Vector::new(1.0, 0.0, 0.0)),
-            (Point::new(-1.0, -1.0, -1.0), Vector::new(-1.0, 0.0, 0.0)),
-        ];
-
-        for example in examples {
-            let normal = Cube::normal_at(example.0);
-            assert_eq!(normal, example.1);
-        }
+    #[parameterized(
+        normal_on_side = {Point::new(1.0, 0.5, -0.8), Vector::new(1.0, 0.0, 0.0)},
+        normal_on_other_side = {Point::new(-1.0, -0.2, 0.9), Vector::new(-1.0, 0.0, 0.0)},
+        normal_on_top = {Point::new(-0.4, 1.0, -0.1), Vector::new(0.0, 1.0, 0.0)},
+        normal_on_bottom = {Point::new(0.3, -1.0, -0.7), Vector::new(0.0, -1.0, 0.0)},
+        normal_on_front = {Point::new(-0.6, 0.3, 1.0), Vector::new(0.0, 0.0, 1.0)},
+        normal_on_back = {Point::new(0.4, 0.4, -1.0), Vector::new(0.0, 0.0, -1.0)},
+        normal_on_corner = {Point::new(1.0, 1.0, 1.0), Vector::new(1.0, 0.0, 0.0)},
+        normal_on_other_corner = {Point::new(-1.0, -1.0, -1.0), Vector::new(-1.0, 0.0, 0.0)},
+    )]
+    fn the_normal_of_the_surface_of_a_cube(point: Point, normal: Vector) {
+        let n = Cube::normal_at(point);
+        assert_eq!(n, normal);
     }
 }
