@@ -62,10 +62,9 @@ impl Camera {
 
         let xs = 0..self.h_size;
         let ys = 0..self.v_size;
-        let xs = 0..1;
-        let ys = 0..1;
         let cross = ys.flat_map(|y| xs.clone().map(move |x| (x, y)));
         cross.par_bridge().for_each(|(x, y)| {
+            println!("processing pixel {x}, {y}");
             let ray = self.ray_for_pixel(x as f64, y as f64);
             let color = w.color_at(ray, 5);
             let mut canvas = image_mutex.lock().unwrap();

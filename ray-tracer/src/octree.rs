@@ -41,16 +41,6 @@ impl Octree {
             let registry = REGISTRY.read().unwrap();
             for obj in self.objects.as_slice() {
                 let obj = registry.get_object(*obj).unwrap();
-                println!("{:?}", &obj);
-                if obj.bounds().min().x() == 0.0
-                    || obj.bounds().min().y() == 0.0
-                    || obj.bounds().min().z() == 0.0
-                    || obj.bounds().max().x() == 0.0
-                    || obj.bounds().max().z() == 0.0
-                    || obj.bounds().max().y() == 0.0
-                {
-                    println!("ZERO")
-                }
                 match obj.shape() {
                     crate::shapes::Shape::Group(_) => {}
                     _ => {
@@ -63,9 +53,11 @@ impl Octree {
             }
             for idx in 0..=7 {
                 if let Some(child) = &self.children[idx] {
-                    let mut xs = child.intersects(r);
-                    for i in xs.iter_mut() {
-                        intersections.push(*i);
+                    if child.region.intersects(&r) {
+                        let mut xs = child.intersects(r);
+                        for i in xs.iter_mut() {
+                            intersections.push(*i);
+                        }
                     }
                 }
             }
@@ -132,21 +124,8 @@ impl Octree {
                     {
                         for idx in 0..=7 {
                             if octants[idx].contains(&obj.bounds()) {
-                                println!(
-                                    "Object {} contained in {:?}, {:?}",
-                                    &obj.id,
-                                    octants[idx].min(),
-                                    octants[idx].max()
-                                );
                                 oct_vecs[idx].push(obj.id);
                                 to_remove.push(obj.id);
-                            } else {
-                                println!(
-                                    "Object {} not contained in {:?}, {:?}",
-                                    &obj.id,
-                                    octants[idx].min(),
-                                    octants[idx].max()
-                                );
                             }
                         }
                     }

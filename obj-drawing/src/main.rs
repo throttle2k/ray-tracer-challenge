@@ -20,7 +20,7 @@ fn main() {
         .with_lights(vec![light])
         .with_objects(vec![g])
         .with_octree();
-    let c = Camera::new(100, 50, PI / 3.0).with_transform(
+    let c = Camera::new(320, 240, PI / 3.0).with_transform(
         Transformation::view_transform(
             Point::new(2.0, 3.0, -5.0),
             Point::new(0.0, 2.0, 0.0),
