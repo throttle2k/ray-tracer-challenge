@@ -28,6 +28,13 @@ impl Transformation {
         (transform_inverse, transform_inverse_transpose)
     }
 
+    pub fn apply_transform(&mut self, t: &Transformation) {
+        self.matrix = &t.matrix * &self.matrix;
+        let (inverse, inverse_transposed) = Self::prepare_transform(&self.matrix);
+        self.inverse = inverse;
+        self.inverse_transposed = inverse_transposed;
+    }
+
     pub fn view_transform(from: Point, to: Point, up: Vector) -> Self {
         let forward = (to - from).normalize();
         let up_normalized = up.normalize();

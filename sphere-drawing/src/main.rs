@@ -3,6 +3,7 @@ use std::{fs, sync::Mutex};
 use colo_rs::colors::Color;
 use ray_tracer::{
     canvas::Canvas,
+    intersections::Intersection,
     lights::PointLight,
     materials::Material,
     patterns::Pattern,
@@ -10,7 +11,6 @@ use ray_tracer::{
     rays::Ray,
     shapes::ObjectBuilder,
     tuples::{points::Point, Tuple},
-    REGISTRY,
 };
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
@@ -26,9 +26,7 @@ fn main() {
         .with_material(
             Material::new().with_pattern(Pattern::new_solid_pattern(Color::new(1.0, 0.2, 1.0))),
         )
-        .register();
-    let registry = REGISTRY.read().unwrap();
-    let shape = registry.get_object(shape).unwrap();
+        .build();
     let light_position = Point::new(-10.0, 10.0, -10.0);
     let light_color = Color::new(1.0, 1.0, 1.0);
     let light = PointLight::new(light_position, light_color);
@@ -44,12 +42,12 @@ fn main() {
         let xs = shape.intersects(&r);
         if let Some(hit) = xs.hit() {
             let point = r.position(hit.t);
-            let object = registry.get_object(hit.object_id).unwrap();
-            let normal = object.normal_at(point);
+            let object = hit.object;
+            let normal = object.normal_at(point, Intersection::new(1.0, &object));
             let eye = -r.direction;
             let color = object
                 .material()
-                .lighting(light, point, eye, normal, false, object);
+                .lighting(light, point, eye, normal, false, &object);
             let mut canvas = canvas_mutex.lock().unwrap();
             canvas.write_pixel(x, y, color);
         }

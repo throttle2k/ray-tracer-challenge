@@ -17,7 +17,11 @@ use solid_pattern::SolidPattern;
 use striped_pattern::StripePattern;
 use test_pattern::TestPattern;
 
-use crate::{shapes::Object, transformations::Transformation, tuples::points::Point};
+use crate::{
+    shapes::{Object, Shape},
+    transformations::Transformation,
+    tuples::points::Point,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 enum PatternType {
@@ -120,8 +124,8 @@ impl Pattern {
     }
 
     pub fn pattern_at_object(&self, obj: &Object, p: Point) -> Color {
-        let object_point = match &obj.shape() {
-            crate::shapes::Shape::Group(_) => obj.world_to_object(p),
+        let object_point = match obj.shape() {
+            Shape::Group(_) => obj.world_to_object(p),
             _ => obj.to_object_space(&p).unwrap(),
         };
         self.pattern_at(object_point)
@@ -133,7 +137,6 @@ mod tests {
 
     use crate::{
         matrix::Matrix, shapes::ObjectBuilder, transformations::Transformation, tuples::Tuple,
-        REGISTRY,
     };
 
     use super::*;
@@ -158,22 +161,18 @@ mod tests {
     fn a_pattern_with_an_object_transformation() {
         let object = ObjectBuilder::new_sphere()
             .with_transform(Transformation::new_transform().scaling(2.0, 2.0, 2.0))
-            .register();
-        let registry = REGISTRY.read().unwrap();
-        let object = registry.get_object(object).unwrap();
+            .build();
         let pattern = Pattern::new_test_pattern();
-        let c = pattern.pattern_at_object(object, Point::new(2.0, 3.0, 4.0));
+        let c = pattern.pattern_at_object(&object, Point::new(2.0, 3.0, 4.0));
         assert_eq!(c, Color::new(1.0, 1.5, 2.0));
     }
 
     #[test]
     fn a_pattern_with_a_pattern_transformation() {
-        let object = ObjectBuilder::new_sphere().register();
-        let registry = REGISTRY.read().unwrap();
-        let object = registry.get_object(object).unwrap();
+        let object = ObjectBuilder::new_sphere().build();
         let pattern = Pattern::new_test_pattern()
             .with_transform(Transformation::new_transform().scaling(2.0, 2.0, 2.0));
-        let c = pattern.pattern_at_object(object, Point::new(2.0, 3.0, 4.0));
+        let c = pattern.pattern_at_object(&object, Point::new(2.0, 3.0, 4.0));
         assert_eq!(c, Color::new(1.0, 1.5, 2.0));
     }
 
@@ -181,12 +180,10 @@ mod tests {
     fn a_pattern_with_both_an_object_and_a_pattern_transformation() {
         let object = ObjectBuilder::new_sphere()
             .with_transform(Transformation::new_transform().scaling(2.0, 2.0, 2.0))
-            .register();
-        let registry = REGISTRY.read().unwrap();
-        let object = registry.get_object(object).unwrap();
+            .build();
         let pattern = Pattern::new_test_pattern()
             .with_transform(Transformation::new_transform().translation(0.5, 1.0, 1.5));
-        let c = pattern.pattern_at_object(object, Point::new(2.5, 3.0, 3.5));
+        let c = pattern.pattern_at_object(&object, Point::new(2.5, 3.0, 3.5));
         assert_eq!(c, Color::new(0.75, 0.5, 0.25));
     }
 }

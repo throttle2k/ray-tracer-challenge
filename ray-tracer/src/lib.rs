@@ -1,8 +1,3 @@
-use std::sync::RwLock;
-
-use lazy_static::lazy_static;
-use registry::Registry;
-
 pub mod bounds;
 pub mod camera;
 pub mod canvas;
@@ -20,7 +15,3 @@ pub mod shapes;
 pub mod transformations;
 pub mod tuples;
 pub mod world;
-
-lazy_static! {
-    pub static ref REGISTRY: RwLock<Registry> = RwLock::new(Registry::new());
-}

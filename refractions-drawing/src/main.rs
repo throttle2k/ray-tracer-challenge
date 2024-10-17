@@ -29,12 +29,12 @@ fn main() {
             ),
         ))
         .with_transform(Transformation::new_transform().rotation_y(PI / 4.0))
-        .register();
+        .build();
 
     let roof = ObjectBuilder::new_plane()
         .with_material(wall_material.clone())
         .with_transform(Transformation::new_transform().translation(0.0, 10.0, 0.0))
-        .register();
+        .build();
 
     let left_wall = ObjectBuilder::new_plane()
         .with_material(wall_material.clone())
@@ -44,7 +44,7 @@ fn main() {
                 .rotation_y(-PI / 4.0)
                 .translation(0.0, 0.0, 5.0),
         )
-        .register();
+        .build();
 
     let right_wall = ObjectBuilder::new_plane()
         .with_material(wall_material.clone())
@@ -54,7 +54,7 @@ fn main() {
                 .rotation_y(PI / 4.0)
                 .translation(0.0, 0.0, 5.0),
         )
-        .register();
+        .build();
 
     let s1 = ObjectBuilder::new_sphere()
         .with_material(
@@ -82,7 +82,7 @@ fn main() {
                 .scaling(0.5, 0.5, 0.5)
                 .translation(1.5, 0.5, 0.5),
         )
-        .register();
+        .build();
 
     let transparent_material = Material::new()
         .with_pattern(Pattern::new_solid_pattern(Color::black()))
@@ -100,7 +100,7 @@ fn main() {
                 .scaling(0.75, 0.75, 0.75)
                 .translation(3.0, 0.75, -3.0),
         )
-        .register();
+        .build();
 
     let s3 = ObjectBuilder::new_sphere()
         .with_material(transparent_material.clone())
@@ -109,7 +109,7 @@ fn main() {
                 .scaling(0.33, 0.33, 0.33)
                 .translation(-1.5, 0.33, -0.75),
         )
-        .register();
+        .build();
 
     let s4 = ObjectBuilder::new_sphere()
         .with_material(transparent_material.clone())
@@ -118,7 +118,7 @@ fn main() {
                 .scaling(0.5, 0.5, 0.5)
                 .translation(-1.5, 0.5, -3.0),
         )
-        .register();
+        .build();
 
     let s5 = ObjectBuilder::new_sphere()
         .with_material(transparent_material.clone())
@@ -127,7 +127,7 @@ fn main() {
                 .scaling(0.5, 0.5, 0.5)
                 .translation(2.0, 0.5, -4.0),
         )
-        .register();
+        .build();
 
     let world = World::new()
         .with_objects(vec![floor, roof, left_wall, right_wall, s1, s2, s3, s4, s5])

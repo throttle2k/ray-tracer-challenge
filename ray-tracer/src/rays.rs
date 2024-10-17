@@ -33,7 +33,6 @@ mod tests {
         shapes::ObjectBuilder,
         transformations::Transformation,
         tuples::Tuple,
-        REGISTRY,
     };
 
     use super::*;
@@ -59,9 +58,7 @@ mod tests {
     #[test]
     fn a_ray_intersects_a_sphere_in_two_points() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = ObjectBuilder::new_sphere().register();
-        let registry = REGISTRY.read().unwrap();
-        let s = registry.get_object(s).unwrap();
+        let s = ObjectBuilder::new_sphere().build();
         let xs = s.intersects(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 4.0);
@@ -71,9 +68,7 @@ mod tests {
     #[test]
     fn a_ray_intersects_a_sphere_at_a_tangent() {
         let r = Ray::new(Point::new(0.0, 1.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = ObjectBuilder::new_sphere().register();
-        let registry = REGISTRY.read().unwrap();
-        let s = registry.get_object(s).unwrap();
+        let s = ObjectBuilder::new_sphere().build();
         let xs = s.intersects(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 5.0);
@@ -83,9 +78,7 @@ mod tests {
     #[test]
     fn a_ray_misses_a_sphere() {
         let r = Ray::new(Point::new(0.0, 2.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = ObjectBuilder::new_sphere().register();
-        let registry = REGISTRY.read().unwrap();
-        let s = registry.get_object(s).unwrap();
+        let s = ObjectBuilder::new_sphere().build();
         let xs = s.intersects(&r);
         assert_eq!(xs.len(), 0);
     }
@@ -93,9 +86,7 @@ mod tests {
     #[test]
     fn a_ray_originate_inside_a_sphere() {
         let r = Ray::new(Point::new(0.0, 0.0, 0.0), Vector::new(0.0, 0.0, 1.0));
-        let s = ObjectBuilder::new_sphere().register();
-        let registry = REGISTRY.read().unwrap();
-        let s = registry.get_object(s).unwrap();
+        let s = ObjectBuilder::new_sphere().build();
         let xs = s.intersects(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -1.0);
@@ -105,9 +96,7 @@ mod tests {
     #[test]
     fn a_sphere_behind_a_ray() {
         let r = Ray::new(Point::new(0.0, 0.0, 5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = ObjectBuilder::new_sphere().register();
-        let registry = REGISTRY.read().unwrap();
-        let s = registry.get_object(s).unwrap();
+        let s = ObjectBuilder::new_sphere().build();
         let xs = s.intersects(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, -6.0);
@@ -116,17 +105,17 @@ mod tests {
 
     #[test]
     fn an_intersection_encapsulates_t_and_object() {
-        let s = ObjectBuilder::new_sphere().register();
-        let i = Intersection::new(3.5, s);
+        let s = ObjectBuilder::new_sphere().build();
+        let i = Intersection::new(3.5, &s);
         assert_eq!(i.t, 3.5);
-        assert_eq!(i.object_id, s);
+        assert_eq!(i.object, &s);
     }
 
     #[test]
     fn aggregating_intersections() {
-        let s = ObjectBuilder::new_sphere().register();
-        let i1 = Intersection::new(1.0, s);
-        let i2 = Intersection::new(2.0, s);
+        let s = ObjectBuilder::new_sphere().build();
+        let i1 = Intersection::new(1.0, &s);
+        let i2 = Intersection::new(2.0, &s);
         let mut xs = Intersections::new();
         xs.push(i1);
         xs.push(i2);
@@ -138,13 +127,11 @@ mod tests {
     #[test]
     fn intersect_sets_the_objects_in_intersections() {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
-        let s = ObjectBuilder::new_sphere().register();
-        let registry = REGISTRY.read().unwrap();
-        let obj = registry.get_object(s).unwrap();
-        let xs = obj.intersects(&r);
+        let s = ObjectBuilder::new_sphere().build();
+        let xs = s.intersects(&r);
         assert_eq!(xs.len(), 2);
-        assert_eq!(xs[0].object_id, s);
-        assert_eq!(xs[1].object_id, s);
+        assert_eq!(xs[0].object, &s);
+        assert_eq!(xs[1].object, &s);
     }
 
     #[test]
@@ -170,10 +157,8 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
         let s = ObjectBuilder::new_sphere()
             .with_transform(Transformation::new_transform().scaling(2.0, 2.0, 2.0))
-            .register();
-        let registry = REGISTRY.read().unwrap();
-        let obj = registry.get_object(s).unwrap();
-        let xs = obj.intersects(&r);
+            .build();
+        let xs = s.intersects(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 3.0);
         assert_eq!(xs[1].t, 7.0);
@@ -184,10 +169,8 @@ mod tests {
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0.0, 0.0, 1.0));
         let s = ObjectBuilder::new_sphere()
             .with_transform(Transformation::new_transform().translation(5.0, 0.0, 0.0))
-            .register();
-        let registry = REGISTRY.read().unwrap();
-        let obj = registry.get_object(s).unwrap();
-        let xs = obj.intersects(&r);
+            .build();
+        let xs = s.intersects(&r);
         assert_eq!(xs.len(), 0);
     }
 }

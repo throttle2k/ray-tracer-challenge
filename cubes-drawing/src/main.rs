@@ -7,7 +7,7 @@ use ray_tracer::{
     materials::Material,
     patterns::Pattern,
     ppm::PPM,
-    shapes::ObjectBuilder,
+    shapes::{Object, ObjectBuilder},
     transformations::Transformation,
     tuples::{points::Point, vectors::Vector, Tuple},
     world::World,
@@ -22,8 +22,8 @@ fn cube_grid(
     nz: i32,
     sep: f64,
     rotation: f64,
-) -> Vec<usize> {
-    let mut objects: Vec<usize> = Vec::new();
+) -> Vec<Object> {
+    let mut objects: Vec<Object> = Vec::new();
     for x in 0..nx {
         for y in 0..ny {
             for z in 0..nz {
@@ -36,7 +36,7 @@ fn cube_grid(
                             .rotation_y(rotation),
                     )
                     .with_material(material.clone())
-                    .register();
+                    .build();
                 objects.push(cube);
             }
         }
@@ -56,7 +56,7 @@ fn main() {
                 .with_shininess(1.0)
                 .with_cast_shadows(false),
         )
-        .register();
+        .build();
 
     let sep = 3.0;
     let rotation = PI / 6.0;
@@ -93,7 +93,7 @@ fn main() {
                 .with_shininess(1000.0)
                 .with_reflective(0.5),
         )
-        .register();
+        .build();
 
     let red_material = Material::new()
         .with_pattern(Pattern::new_solid_pattern(Color::new(0.9, 0.0, 0.1)))
@@ -124,11 +124,11 @@ fn main() {
                 .rotation_x(PI / 4.0)
                 .translation(0.0, 4.0, -5.0),
         )
-        .register();
+        .build();
 
     let light = PointLight::new(Point::new(-2.0, 10.0, -10.0), Color::white());
 
-    let mut objects: Vec<usize> = vec![room];
+    let mut objects: Vec<Object> = vec![room];
     objects.append(&mut green_cubes);
     objects.push(ball);
     objects.append(&mut red_cubes);

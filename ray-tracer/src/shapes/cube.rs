@@ -7,10 +7,25 @@ use crate::{
     tuples::{points::Point, vectors::Vector, Tuple},
 };
 
+use super::Object;
+
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Cube {}
 
 impl Cube {
-    pub fn normal_at(object_point: Point) -> Vector {
+    pub fn check_axis(origin: f64, direction: f64) -> (f64, f64) {
+        let tmin_numerator = -1.0 - origin;
+        let tmax_numerator = 1.0 - origin;
+        let tmin = tmin_numerator / direction;
+        let tmax = tmax_numerator / direction;
+        if tmin < tmax {
+            (tmin, tmax)
+        } else {
+            (tmax, tmin)
+        }
+    }
+
+    pub fn normal_at(&self, object_point: Point) -> Vector {
         let max_c = [
             object_point.x().abs(),
             object_point.y().abs(),
@@ -28,19 +43,7 @@ impl Cube {
         }
     }
 
-    fn check_axis(origin: f64, direction: f64) -> (f64, f64) {
-        let tmin_numerator = -1.0 - origin;
-        let tmax_numerator = 1.0 - origin;
-        let tmin = tmin_numerator / direction;
-        let tmax = tmax_numerator / direction;
-        if tmin < tmax {
-            (tmin, tmax)
-        } else {
-            (tmax, tmin)
-        }
-    }
-
-    pub fn intersects(object_id: usize, ray: Ray) -> Intersections {
+    pub fn intersects<'a>(&self, object: &'a Object, ray: &Ray) -> Intersections<'a> {
         let (xtmin, xtmax) = Cube::check_axis(ray.origin.x(), ray.direction.x());
         let (ytmin, ytmax) = Cube::check_axis(ray.origin.y(), ray.direction.y());
         let (ztmin, ztmax) = Cube::check_axis(ray.origin.z(), ray.direction.z());
@@ -54,13 +57,13 @@ impl Cube {
             .unwrap();
         let mut intersections = Intersections::new();
         if tmin <= tmax {
-            intersections.push(Intersection::new(tmin, object_id));
-            intersections.push(Intersection::new(tmax, object_id));
+            intersections.push(Intersection::new(tmin, object));
+            intersections.push(Intersection::new(tmax, object));
         }
         intersections
     }
 
-    pub fn bounds() -> Bounds {
+    pub fn bounds(&self) -> Bounds {
         Bounds::new(Point::new(-1.0, -1.0, -1.0), Point::new(1.0, 1.0, 1.0))
     }
 }
@@ -69,7 +72,7 @@ impl Cube {
 mod tests {
     use yare::parameterized;
 
-    use crate::{shapes::ObjectBuilder, REGISTRY};
+    use crate::shapes::ObjectBuilder;
 
     use super::*;
 
@@ -83,9 +86,7 @@ mod tests {
         strike_along_edge = {Point::new(0.0, 0.5, 0.0), Vector::new(0.0, 0.0, 1.0), -1.0, 1.0},
     )]
     fn a_ray_intersects_a_cube(origin: Point, direction: Vector, t0: f64, t1: f64) {
-        let cube = ObjectBuilder::new_cube().register();
-        let registry = REGISTRY.read().unwrap();
-        let cube = registry.get_object(cube).unwrap();
+        let cube = ObjectBuilder::new_cube().build();
         let r = Ray::new(origin, direction);
         let xs = cube.intersects(&r);
         assert_eq!(xs.len(), 2);
@@ -102,9 +103,7 @@ mod tests {
         miss_along_x_axis = {Point::new(2.0, 2.0, 0.0), Vector::new(-1.0, 0.0, 0.0)},
     )]
     fn a_ray_misses_a_cube(origin: Point, direction: Vector) {
-        let cube = ObjectBuilder::new_cube().register();
-        let registry = REGISTRY.read().unwrap();
-        let cube = registry.get_object(cube).unwrap();
+        let cube = ObjectBuilder::new_cube().build();
         let r = Ray::new(origin, direction);
         let xs = cube.intersects(&r);
         assert!(xs.is_empty());
@@ -121,7 +120,15 @@ mod tests {
         normal_on_other_corner = {Point::new(-1.0, -1.0, -1.0), Vector::new(-1.0, 0.0, 0.0)},
     )]
     fn the_normal_of_the_surface_of_a_cube(point: Point, normal: Vector) {
-        let n = Cube::normal_at(point);
+        let n = Cube::normal_at(&Cube::default(), point);
         assert_eq!(n, normal);
+    }
+
+    #[test]
+    fn a_cube_has_a_bounding_box() {
+        let s = Cube::default();
+        let b = s.bounds();
+        assert_eq!(b.min(), &Point::new(-1.0, -1.0, -1.0));
+        assert_eq!(b.max(), &Point::new(1.0, 1.0, 1.0));
     }
 }

@@ -1,4 +1,4 @@
-use std::sync::{atomic::AtomicUsize, Arc, Mutex};
+use std::sync::Mutex;
 
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
@@ -64,7 +64,7 @@ impl Camera {
         let ys = 0..self.v_size;
         let cross = ys.flat_map(|y| xs.clone().map(move |x| (x, y)));
         cross.par_bridge().for_each(|(x, y)| {
-            println!("processing pixel {x}, {y}");
+            println!("Rendering pixel {} {}", x, y);
             let ray = self.ray_for_pixel(x as f64, y as f64);
             let color = w.color_at(ray, 5);
             let mut canvas = image_mutex.lock().unwrap();

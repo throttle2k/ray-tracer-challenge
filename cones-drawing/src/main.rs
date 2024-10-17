@@ -7,7 +7,7 @@ use ray_tracer::{
     materials::Material,
     patterns::Pattern,
     ppm::PPM,
-    shapes::{Cone, ConeCap, ObjectBuilder},
+    shapes::{Cap, ObjectBuilder},
     transformations::Transformation,
     tuples::{points::Point, vectors::Vector, Tuple},
     world::World,
@@ -46,26 +46,26 @@ fn main() {
                     .with_transform(Transformation::new_transform().scaling(1.0, 1.0, 1.0)),
                 ),
         )
-        .register();
+        .build();
 
-    let cone_1 = ObjectBuilder::new_cone(
-        Cone::default()
-            .with_minimum(-1.0)
-            .with_maximum(0.0)
-            .with_cap(ConeCap::Both),
-    )
-    .with_transform(Transformation::new_transform().translation(-10.0, 0.0, 0.0))
-    .with_material(
-        Material::new()
-            .with_color(Color::new(1.0, 0.843, 0.0))
-            .with_ambient(0.2)
-            .with_specular(1.0)
-            .with_shininess(1000.0)
-            .with_reflective(1.0),
-    )
-    .register();
+    let cone_1 = ObjectBuilder::new_cone()
+        .with_min(-1.0)
+        .with_max(0.0)
+        .with_cap(Cap::Both)
+        .with_transform(Transformation::new_transform().translation(-10.0, 0.0, 0.0))
+        .with_material(
+            Material::new()
+                .with_color(Color::new(1.0, 0.843, 0.0))
+                .with_ambient(0.2)
+                .with_specular(1.0)
+                .with_shininess(1000.0)
+                .with_reflective(1.0),
+        )
+        .build();
 
-    let cone_2 = ObjectBuilder::new_cone(Cone::default().with_minimum(-1.0).with_maximum(1.0))
+    let cone_2 = ObjectBuilder::new_cone()
+        .with_min(-1.0)
+        .with_max(1.0)
         .with_transform(Transformation::new_transform().translation(-5.0, 0.0, -2.0))
         .with_material(
             Material::new()
@@ -74,18 +74,22 @@ fn main() {
                 .with_shininess(1000.0)
                 .with_reflective(1.0),
         )
-        .register();
+        .build();
 
-    let cone_3 = ObjectBuilder::new_cone(Cone::default().with_minimum(-1.0).with_maximum(2.3))
+    let cone_3 = ObjectBuilder::new_cone()
+        .with_min(-1.0)
+        .with_max(2.3)
         .with_transform(Transformation::new_transform().translation(0.0, 0.0, 0.0))
         .with_material(
             Material::new()
                 .with_color(Color::red())
                 .with_reflective(1.0),
         )
-        .register();
+        .build();
 
-    let cone_4 = ObjectBuilder::new_cone(Cone::default().with_minimum(-2.0).with_maximum(0.0))
+    let cone_4 = ObjectBuilder::new_cone()
+        .with_min(-2.0)
+        .with_max(0.0)
         .with_transform(
             Transformation::new_transform()
                 .rotation_x(-PI / 4.0)
@@ -98,9 +102,11 @@ fn main() {
                 .with_shininess(300.0)
                 .with_reflective(1.0),
         )
-        .register();
+        .build();
 
-    let cone_5 = ObjectBuilder::new_cone(Cone::default().with_minimum(-2.0).with_maximum(0.0))
+    let cone_5 = ObjectBuilder::new_cone()
+        .with_min(-2.0)
+        .with_max(0.0)
         .with_transform(
             Transformation::new_transform()
                 .rotation_z(-PI / 4.0)
@@ -116,7 +122,7 @@ fn main() {
                 .with_shininess(300.0)
                 .with_reflective(0.9),
         )
-        .register();
+        .build();
 
     let g = ObjectBuilder::new_group()
         .add_child(cone_1)
@@ -124,7 +130,7 @@ fn main() {
         .add_child(cone_3)
         .add_child(cone_4)
         .add_child(cone_5)
-        .register();
+        .build();
 
     let light_1 = PointLight::new(
         Point::new(-2.0, 5.0, -10.0),

@@ -5,24 +5,26 @@ use ray_tracer::{
     camera::Camera,
     lights::PointLight,
     ppm::PPM,
-    shapes::{Cylinder, ObjectBuilder},
+    shapes::{Object, ObjectBuilder},
     transformations::Transformation,
     tuples::{points::Point, vectors::Vector, Tuple},
     world::World,
 };
 
-fn hex_corner() -> usize {
+fn hex_corner() -> Object {
     ObjectBuilder::new_sphere()
         .with_transform(
             Transformation::new_transform()
                 .scaling(0.25, 0.25, 0.25)
                 .translation(0.0, 0.0, 1.0),
         )
-        .register()
+        .build()
 }
 
-fn hex_edge() -> usize {
-    ObjectBuilder::new_cylinder(Cylinder::default().with_minimum(0.0).with_maximum(1.0))
+fn hex_edge() -> Object {
+    ObjectBuilder::new_cylinder()
+        .with_min(0.0)
+        .with_max(1.0)
         .with_transform(
             Transformation::new_transform()
                 .scaling(0.25, 1.0, 0.25)
@@ -30,23 +32,23 @@ fn hex_edge() -> usize {
                 .rotation_y(-PI / 6.0)
                 .translation(0.0, 0.0, -1.0),
         )
-        .register()
+        .build()
 }
 
-fn hex_side(rotation: f64) -> usize {
+fn hex_side(rotation: f64) -> Object {
     ObjectBuilder::new_group()
         .add_child(hex_corner())
         .add_child(hex_edge())
         .with_transform(Transformation::new_transform().rotation_y(rotation))
-        .register()
+        .build()
 }
 
-fn hexagon() -> usize {
+fn hexagon() -> Object {
     let mut hex = ObjectBuilder::new_group();
     for n in 0..=5 {
         hex = hex.add_child(hex_side(n as f64 * PI / 3.0));
     }
-    hex.register()
+    hex.build()
 }
 
 fn main() {

@@ -32,7 +32,7 @@ fn main() {
         ));
     let floor = ObjectBuilder::new_plane()
         .with_material(floor_m.clone())
-        .register();
+        .build();
 
     let middle_t = Transformation::new_transform()
         .scaling(3.0, 3.0, 3.0)
@@ -49,7 +49,7 @@ fn main() {
     let middle = ObjectBuilder::new_sphere()
         .with_material(middle_m)
         .with_transform(middle_t)
-        .register();
+        .build();
 
     let right_t = Transformation::new_transform()
         .scaling(1.5, 1.5, 1.5)
@@ -73,7 +73,7 @@ fn main() {
     let right = ObjectBuilder::new_sphere()
         .with_material(right_m)
         .with_transform(right_t)
-        .register();
+        .build();
 
     let left_t = Transformation::new_transform()
         .scaling(2.0, 1.0, 2.0)
@@ -108,7 +108,7 @@ fn main() {
     let left = ObjectBuilder::new_sphere()
         .with_material(left_m)
         .with_transform(left_t)
-        .register();
+        .build();
 
     let wall1_t = Transformation::new_transform()
         .rotation_x(PI / 2.0)
@@ -131,7 +131,7 @@ fn main() {
     let wall1 = ObjectBuilder::new_plane()
         .with_transform(wall1_t)
         .with_material(wall1_m)
-        .register();
+        .build();
 
     let light_source = PointLight::new(Point::new(-10.0, 10.0, -10.0), Color::new(1.0, 1.0, 1.0));
 

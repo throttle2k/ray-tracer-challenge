@@ -4,27 +4,27 @@ use crate::{
     bounds::Bounds,
     intersections::Intersections,
     rays::Ray,
+    shapes::Object,
     tuples::{points::Point, Tuple},
-    REGISTRY,
 };
 
 const MAX_SIZE: f64 = 1024.0;
 const MIN_SIZE: f64 = 0.001;
 
 #[derive(Debug)]
-pub struct Octree {
+pub struct Octree<'a> {
     region: Bounds,
-    objects: Vec<usize>,
-    children: [Option<Box<Octree>>; 8],
+    objects: Vec<&'a Object>,
+    children: [Option<Box<Octree<'a>>>; 8],
 }
 
-impl Octree {
+impl<'a> Octree<'a> {
     pub fn with_region(mut self, region: Bounds) -> Self {
         self.region = region;
         self
     }
 
-    pub fn with_objects(mut self, objects: Vec<usize>) -> Self {
+    pub fn with_objects(mut self, objects: Vec<&'a Object>) -> Self {
         self.objects = objects;
         self
     }
@@ -38,9 +38,7 @@ impl Octree {
             Intersections::new()
         } else {
             let mut intersections = Intersections::new();
-            let registry = REGISTRY.read().unwrap();
-            for obj in self.objects.as_slice() {
-                let obj = registry.get_object(*obj).unwrap();
+            for obj in self.objects.clone() {
                 match obj.shape() {
                     crate::shapes::Shape::Group(_) => {}
                     _ => {
@@ -65,7 +63,7 @@ impl Octree {
         }
     }
 
-    pub fn build(mut self) -> Option<Octree> {
+    pub fn build(mut self) -> Option<Octree<'a>> {
         if self.objects.len() == 1 {
             return None;
         }
@@ -106,39 +104,35 @@ impl Octree {
                 Point::new(center.x(), self.region.max().y(), self.region.max().z()),
             ),
         ];
-        let mut oct_vecs: [Vec<usize>; 8] = Default::default();
-        let mut to_remove: Vec<usize> = Vec::new();
+        let mut oct_vecs: [Vec<&Object>; 8] = Default::default();
+        let mut to_remove: Vec<&Object> = Vec::new();
 
-        let registry = REGISTRY.read().unwrap();
-        for obj in self.objects.as_slice() {
-            let obj = registry.get_object(*obj).unwrap();
-            match obj.shape() {
-                crate::shapes::Shape::Group(_) => {}
-                _ => {
-                    if obj.bounds().min().x() > NEG_INFINITY
-                        && obj.bounds().min().y() > NEG_INFINITY
-                        && obj.bounds().min().z() > NEG_INFINITY
-                        && obj.bounds().max().x() < INFINITY
-                        && obj.bounds().max().y() < INFINITY
-                        && obj.bounds().max().z() < INFINITY
-                    {
-                        for idx in 0..=7 {
-                            if octants[idx].contains(&obj.bounds()) {
-                                oct_vecs[idx].push(obj.id);
-                                to_remove.push(obj.id);
-                            }
+        self.objects.iter().for_each(|obj| match obj.shape() {
+            crate::shapes::Shape::Group(_) => {}
+            _ => {
+                if obj.bounds().min().x() > NEG_INFINITY
+                    && obj.bounds().min().y() > NEG_INFINITY
+                    && obj.bounds().min().z() > NEG_INFINITY
+                    && obj.bounds().max().x() < INFINITY
+                    && obj.bounds().max().y() < INFINITY
+                    && obj.bounds().max().z() < INFINITY
+                {
+                    for idx in 0..=7 {
+                        if octants[idx].contains(&obj.bounds()) {
+                            oct_vecs[idx].push(obj);
+                            to_remove.push(obj);
                         }
                     }
                 }
             }
-        }
+        });
         self.objects.retain(|i| !to_remove.contains(i));
         for idx in 0..=7 {
             match oct_vecs[idx].len() {
                 0 => self.children[idx] = None,
                 _ => {
                     self.children[idx] = Self::default()
-                        .with_region(octants[idx].clone())
+                        .with_region(octants[idx])
                         .with_objects(oct_vecs[idx].clone())
                         .build()
                         .map(Box::new);
@@ -149,7 +143,7 @@ impl Octree {
     }
 }
 
-impl Default for Octree {
+impl<'a> Default for Octree<'a> {
     fn default() -> Self {
         Self {
             region: Bounds::new(

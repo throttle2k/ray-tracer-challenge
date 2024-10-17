@@ -32,7 +32,7 @@ fn main() {
                     .with_transform(Transformation::new_transform().rotation_y(PI / 2.0)),
                 )),
         )
-        .register();
+        .build();
 
     let wall1 = ObjectBuilder::new_plane()
         .with_material(
@@ -60,7 +60,7 @@ fn main() {
                 .rotation_x(PI / 2.0)
                 .translation(0.0, 0.0, 4.0),
         )
-        .register();
+        .build();
 
     let wall2 = ObjectBuilder::new_plane()
         .with_material(
@@ -88,7 +88,7 @@ fn main() {
                 .rotation_z(PI / 2.0)
                 .translation(-4.0, 0.0, 0.0),
         )
-        .register();
+        .build();
 
     let middle = ObjectBuilder::new_sphere()
         .with_material(
@@ -105,7 +105,7 @@ fn main() {
                 .translation(1.5, 1.0, -1.0)
                 .scaling(2.0, 2.0, 2.0),
         )
-        .register();
+        .build();
 
     let center = ObjectBuilder::new_sphere()
         .with_material(
@@ -119,7 +119,7 @@ fn main() {
                 .scaling(1.5, 1.5, 1.5)
                 .translation(-2.0, 1.5, 3.0),
         )
-        .register();
+        .build();
 
     let left = ObjectBuilder::new_sphere()
         .with_material(
@@ -133,7 +133,7 @@ fn main() {
                 .scaling(0.9, 0.9, 0.9)
                 .translation(-2.0, 0.9, -1.5),
         )
-        .register();
+        .build();
 
     let right = ObjectBuilder::new_sphere()
         .with_material(
@@ -147,7 +147,7 @@ fn main() {
                 .scaling(0.5, 0.5, 0.5)
                 .translation(1.0, 0.5, 3.0),
         )
-        .register();
+        .build();
 
     let light_source = PointLight::new(Point::new(12.0, 20.0, -22.0), Color::new(0.8, 0.8, 0.8));
 
