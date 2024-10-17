@@ -1,5 +1,6 @@
 
 # Ray-tracer challenge
+
 This is my implementation of the book [The Ray Tracer Challenge](http://raytracerchallenge.com/).
 Everything is developed in Rust 🦀.
 
@@ -17,15 +18,16 @@ Everything is developed in Rust 🦀.
 - [x] Cubes
 - [x] Cylinders
 - [x] Groups
-- [ ] Triangles
+- [x] Triangles
 - [ ] Constructive Solid Geometry (CSG)
 - [ ] Next Steps
 
 ## Some points of attention
+
 - The transformation matrices are pre-calculated for better efficiency
 - Added parallelization for faster rendering times
-- To handle tree-like structures, I've added a registry shared between the components via lazy-static
-- Tried to use types as much as possible (the book uses only Tuples, I used specific types for Points and Vectors)
-- Added an implementation of Octrees for better rendering performance
+- Tried to use types as much as possible (the book uses only Tuples, I used
+specific types for Points and Vectors)
+- Added BVH (Bounding Volume Hierarchy) for faster rendering.
 
 Still a work in progress, and most of the code must be refactored.
