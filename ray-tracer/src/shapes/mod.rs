@@ -1,4 +1,5 @@
 mod cone;
+mod csg;
 pub mod cube;
 pub mod cylinder;
 mod group;
@@ -11,6 +12,8 @@ mod triangle;
 use std::marker::PhantomData;
 
 pub use cone::Cone;
+pub use csg::CSGKind;
+use csg::CSG;
 use cube::Cube;
 pub use cylinder::Cylinder;
 use group::Group;
@@ -18,8 +21,8 @@ use plane::Plane;
 use smooth_triangle::SmoothTriangle;
 use sphere::Sphere;
 use state::{
-    InnerMarker, ShapeMarker, WithCone, WithCube, WithCylinder, WithPlane, WithSmoothTriangle,
-    WithSphere, WithTestShape, WithTriangle,
+    InnerMarker, ShapeMarker, WithCSG, WithCone, WithCube, WithCylinder, WithPlane,
+    WithSmoothTriangle, WithSphere, WithTestShape, WithTriangle,
 };
 pub use state::{WithGroup, WithShape};
 use test_shape::TestShape;
@@ -43,6 +46,7 @@ pub enum Shape {
     Group(Group),
     Triangle(Triangle),
     SmoothTriangle(SmoothTriangle),
+    CSG(CSG),
 }
 
 impl Shape {
@@ -57,6 +61,7 @@ impl Shape {
             Shape::Group(s) => s.bounds(),
             Shape::Triangle(s) => s.bounds(),
             Shape::SmoothTriangle(s) => s.bounds(),
+            Shape::CSG(s) => s.bounds(),
         }
     }
 
@@ -71,6 +76,7 @@ impl Shape {
             Shape::Group(s) => s.normal_at(local_point),
             Shape::Triangle(s) => s.normal_at(local_point),
             Shape::SmoothTriangle(s) => s.normal_at(local_point, hit),
+            Shape::CSG(s) => s.normal_at(local_point),
         }
     }
 
@@ -85,6 +91,7 @@ impl Shape {
             Shape::Group(s) => s.intersects(object, ray),
             Shape::Triangle(s) => s.intersects(object, ray),
             Shape::SmoothTriangle(s) => s.intersects(object, ray),
+            Shape::CSG(s) => s.intersects(object, ray),
         }
     }
 
@@ -234,6 +241,7 @@ mod state {
     pub enum WithGroup {}
     pub enum WithTriangle {}
     pub enum WithSmoothTriangle {}
+    pub enum WithCSG {}
 
     pub trait ShapeMarker {}
     impl ShapeMarker for () {}
@@ -250,6 +258,7 @@ mod state {
     impl InnerMarker for WithGroup {}
     impl InnerMarker for WithTriangle {}
     impl InnerMarker for WithSmoothTriangle {}
+    impl InnerMarker for WithCSG {}
 }
 
 pub enum Cappable {
@@ -453,6 +462,19 @@ impl ObjectBuilder<(), ()> {
             ..Default::default()
         }
     }
+
+    pub fn new_csg(
+        kind: csg::CSGKind,
+        left: Object,
+        right: Object,
+    ) -> ObjectBuilder<WithShape, WithCSG> {
+        ObjectBuilder {
+            shape: Some(Shape::CSG(CSG::new(kind, left, right))),
+            _shape: PhantomData,
+            _inner: PhantomData,
+            ..Default::default()
+        }
+    }
 }
 
 impl ObjectBuilder<WithShape, WithSphere> {
@@ -603,6 +625,8 @@ impl Object {
     pub fn intersects(&self, r: &Ray) -> Intersections {
         let r = if !matches!(self.shape, Shape::Group(_)) {
             &r.transform(self.transform.inverse().unwrap())
+        } else if !matches!(self.shape, Shape::CSG(_)) {
+            &r.transform(self.transform.inverse().unwrap())
         } else {
             r
         };
@@ -705,12 +729,22 @@ impl Object {
     pub fn divide(&mut self, threshold: usize) {
         self.shape.divide(threshold);
     }
+
+    fn includes(&self, object: &Object) -> bool {
+        match self.shape() {
+            Shape::Group(g) => g.children().iter().any(|child| child.includes(object)),
+            Shape::CSG(csg) => csg.left() == object || csg.right() == object,
+            _ => self == object,
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
     use std::f64::consts::PI;
+
+    use csg::CSGKind;
 
     use crate::{matrix::Matrix, tuples::Tuple};
 
@@ -1075,5 +1109,31 @@ mod tests {
         assert_eq!(sub_g_0.group().unwrap().children()[0], s1);
         assert_eq!(sub_g_1.group().unwrap().children()[0], s2);
         assert_eq!(sub_g_1.group().unwrap().children()[1], s3);
+    }
+
+    #[test]
+    fn a_ray_misses_a_csg_object() {
+        let s1 = ObjectBuilder::new_sphere().build();
+        let s2 = ObjectBuilder::new_sphere().build();
+        let c = ObjectBuilder::new_csg(CSGKind::Union, s1, s2).build();
+        let r = Ray::new(Point::new(0.0, 2.0, -5.0), Vector::z_norm());
+        let xs = c.intersects(&r);
+        assert!(xs.is_empty());
+    }
+
+    #[test]
+    fn a_ray_hits_a_csg_object() {
+        let s1 = ObjectBuilder::new_sphere().build();
+        let s2 = ObjectBuilder::new_sphere()
+            .with_transform(Transformation::new_transform().translation(0.0, 0.0, 0.5))
+            .build();
+        let c = ObjectBuilder::new_csg(CSGKind::Union, s1.clone(), s2.clone()).build();
+        let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::z_norm());
+        let xs = c.intersects(&r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 4.0);
+        assert_eq!(xs[0].object, &s1);
+        assert_eq!(xs[1].t, 6.5);
+        assert_eq!(xs[1].object, &s2);
     }
 }

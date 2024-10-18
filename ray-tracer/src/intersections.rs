@@ -181,6 +181,14 @@ impl<'a> Index<usize> for Intersections<'a> {
     }
 }
 
+impl<'a> FromIterator<Intersection<'a>> for Intersections<'a> {
+    fn from_iter<T: IntoIterator<Item = Intersection<'a>>>(iter: T) -> Self {
+        let mut xs = Intersections::new();
+        iter.into_iter().for_each(|i| xs.push(i));
+        xs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx_eq::{ApproxEq, EPSILON};

@@ -19,7 +19,7 @@ Everything is developed in Rust 🦀.
 - [x] Cylinders
 - [x] Groups
 - [x] Triangles
-- [ ] Constructive Solid Geometry (CSG)
+- [x] Constructive Solid Geometry (CSG)
 - [ ] Next Steps
 
 ## Some points of attention
