@@ -316,19 +316,27 @@ impl<S: ShapeMarker, I: InnerMarker> Default for ObjectBuilder<S, I> {
     }
 }
 
-impl<S: ShapeMarker, I: InnerMarker> ObjectBuilder<S, I> {
-    pub fn with_transform(mut self, transform: Transformation) -> ObjectBuilder<S, I> {
+impl<I: InnerMarker> ObjectBuilder<WithShape, I> {
+    pub fn with_transform(mut self, transform: Transformation) -> ObjectBuilder<WithShape, I> {
         self.transform = transform;
         self
     }
 
-    pub fn with_material(mut self, material: Material) -> ObjectBuilder<S, I> {
-        self.material = material;
+    pub fn with_material(mut self, material: Material) -> ObjectBuilder<WithShape, I> {
+        self.material = material.clone();
+        self.shape = match self.shape {
+            Some(Shape::Group(mut g)) => {
+                g.children_mut()
+                    .iter_mut()
+                    .for_each(|child| child.set_material(&material));
+                Some(Shape::Group(g))
+            }
+            _ => self.shape,
+        };
+
         self
     }
-}
 
-impl<I: InnerMarker> ObjectBuilder<WithShape, I> {
     pub fn build(mut self) -> Object {
         match self.shape {
             Some(Shape::Group(ref mut g)) => {
@@ -611,6 +619,18 @@ impl Object {
 
     pub fn material(&self) -> &Material {
         &self.material
+    }
+
+    pub fn set_material(&mut self, material: &Material) {
+        self.material = material.clone();
+        match self.shape {
+            Shape::Group(ref mut g) => {
+                g.children_mut()
+                    .iter_mut()
+                    .for_each(|child| child.set_material(material));
+            }
+            _ => (),
+        };
     }
 
     pub fn material_mut(&mut self) -> &mut Material {

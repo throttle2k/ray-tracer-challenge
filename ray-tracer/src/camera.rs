@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{sync::Mutex, time::Instant};
 
 use rayon::iter::{ParallelBridge, ParallelIterator};
 
@@ -60,16 +60,21 @@ impl Camera {
 
         let image_mutex = Mutex::new(image);
 
+        let now = Instant::now();
+        println!("Start rendering");
+
         let xs = 0..self.h_size;
         let ys = 0..self.v_size;
         let cross = ys.flat_map(|y| xs.clone().map(move |x| (x, y)));
         cross.par_bridge().for_each(|(x, y)| {
-            println!("Rendering pixel {} {}", x, y);
             let ray = self.ray_for_pixel(x as f64, y as f64);
             let color = w.color_at(ray, 5);
             let mut canvas = image_mutex.lock().unwrap();
             canvas.write_pixel(x, y, color);
         });
+
+        println!("Rendering finished in {:.2?} seconds", now.elapsed());
+
         let image = image_mutex.lock().unwrap();
         image.clone()
     }
