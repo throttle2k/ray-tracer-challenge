@@ -122,6 +122,16 @@ impl Sum for Color {
     }
 }
 
+impl From<[f64; 3]> for Color {
+    fn from(value: [f64; 3]) -> Self {
+        Self {
+            r: value[0],
+            g: value[1],
+            b: value[2],
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

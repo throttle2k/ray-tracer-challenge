@@ -1,4 +1,7 @@
-use crate::{matrix::Matrix, tuples::points::Point, tuples::vectors::Vector, tuples::Tuple};
+use crate::{
+    matrix::Matrix,
+    tuples::{points::Point, vectors::Vector, Tuple},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Transformation {
@@ -166,6 +169,17 @@ impl Transformation {
 
     pub fn inverse_transposed(&self) -> Option<&Matrix> {
         self.inverse_transposed.as_ref()
+    }
+}
+
+impl From<Matrix> for Transformation {
+    fn from(matrix: Matrix) -> Self {
+        let (inverse, inverse_transposed) = Self::prepare_transform(&matrix);
+        Self {
+            matrix,
+            inverse,
+            inverse_transposed,
+        }
     }
 }
 

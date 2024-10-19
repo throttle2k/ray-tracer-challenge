@@ -159,6 +159,16 @@ impl Div<f64> for Vector {
     }
 }
 
+impl From<[f64; 3]> for Vector {
+    fn from(value: [f64; 3]) -> Self {
+        Self {
+            x: value[0],
+            y: value[1],
+            z: value[2],
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

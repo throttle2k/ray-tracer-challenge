@@ -139,3 +139,13 @@ impl Sub<Vector> for Point {
         Point::new(self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z())
     }
 }
+
+impl From<[f64; 3]> for Point {
+    fn from(value: [f64; 3]) -> Self {
+        Self {
+            x: value[0],
+            y: value[1],
+            z: value[2],
+        }
+    }
+}
