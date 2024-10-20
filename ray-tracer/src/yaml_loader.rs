@@ -573,6 +573,9 @@ impl<'de> Deserialize<'de> for YamlTransform {
             },
 
             Op::RotateX => match operands {
+                [Value::String(expr)] => YamlTransform::RotateX {
+                    angle: meval::eval_str(expr).unwrap(),
+                },
                 [Value::Number(angle)] => YamlTransform::RotateX {
                     angle: angle.as_f64().unwrap(),
                 },
@@ -584,6 +587,9 @@ impl<'de> Deserialize<'de> for YamlTransform {
             },
 
             Op::RotateY => match operands {
+                [Value::String(expr)] => YamlTransform::RotateY {
+                    angle: meval::eval_str(expr).unwrap(),
+                },
                 [Value::Number(angle)] => YamlTransform::RotateY {
                     angle: angle.as_f64().unwrap(),
                 },
@@ -595,6 +601,9 @@ impl<'de> Deserialize<'de> for YamlTransform {
             },
 
             Op::RotateZ => match operands {
+                [Value::String(expr)] => YamlTransform::RotateZ {
+                    angle: meval::eval_str(expr).unwrap(),
+                },
                 [Value::Number(angle)] => YamlTransform::RotateZ {
                     angle: angle.as_f64().unwrap(),
                 },
@@ -1142,13 +1151,42 @@ mod tests {
   from: [ -6, 0, -10 ]
   to: [ 6, 0, 6 ]
   up: [ -0.45, 1, 0 ]
+- define: rotation-xyz
+  transform:
+  - [rotate-x, pi / 3.0]
+  - [rotate-y, pi / 4.0]
+  - [rotate-z, pi / 5.0]
 "#;
         let commands: Vec<SceneCommand> = serde_yml::from_str(yml_str).unwrap();
-        assert_eq!(commands.len(), 1);
+        assert_eq!(commands.len(), 2);
         let command = &commands[0];
         assert!(matches!(command, SceneCommand::Add(_)));
         if let SceneCommand::Add(Add::AddCamera(c)) = command {
             assert_eq!(c.field_of_view, PI / 2.0);
+        } else {
+            panic!("wrong command in yaml");
+        }
+        let command = &commands[1];
+        assert!(matches!(command, SceneCommand::Define(_)));
+        if let SceneCommand::Define(d) = command {
+            assert!(d.transform.is_some());
+            let t = d.transform.clone().unwrap();
+            assert_eq!(t.len(), 3);
+            if let YamlTransform::RotateX { angle } = t[0] {
+                assert_eq!(angle, PI / 3.0);
+            } else {
+                panic!("wrong transform in yaml");
+            }
+            if let YamlTransform::RotateY { angle } = t[1] {
+                assert_eq!(angle, PI / 4.0);
+            } else {
+                panic!("wrong transform in yaml");
+            }
+            if let YamlTransform::RotateZ { angle } = t[2] {
+                assert_eq!(angle, PI / 5.0);
+            } else {
+                panic!("wrong transform in yaml");
+            }
         } else {
             panic!("wrong command in yaml");
         }
