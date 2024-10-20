@@ -81,11 +81,27 @@ impl Define {
 struct YamlCamera {
     width: usize,
     height: usize,
-    #[serde(rename = "field-of-view")]
+    #[serde(rename = "field-of-view", deserialize_with = "de_fov")]
     field_of_view: f64,
     from: [f64; 3],
     to: [f64; 3],
     up: [f64; 3],
+}
+
+fn de_fov<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde_yml::Value;
+
+    let expr = Value::deserialize(deserializer)?;
+    match expr {
+        Value::String(expr) => meval::eval_str(expr).map_err(de::Error::custom),
+        Value::Number(num) => Ok(num.as_f64().unwrap()),
+        _ => Err(de::Error::custom(format!(
+            "Invalid math expression: {expr:?}"
+        ))),
+    }
 }
 
 impl Into<Camera> for YamlCamera {
@@ -930,6 +946,9 @@ impl YamlLoader {
 #[cfg(test)]
 mod tests {
 
+    use core::panic;
+    use std::f64::consts::PI;
+
     use super::*;
 
     #[test]
@@ -1111,5 +1130,27 @@ mod tests {
         let defines: Vec<Define> = defines.iter().map(|def| def.expand(&defines)).collect();
         assert_eq!(defines[0], white_material);
         assert_eq!(defines[1], blue_material);
+    }
+
+    #[test]
+    fn can_use_math_expressions_in_fields() {
+        let yml_str = r#"
+- add: camera
+  width: 100
+  height: 100
+  field-of-view: pi / 2.0
+  from: [ -6, 0, -10 ]
+  to: [ 6, 0, 6 ]
+  up: [ -0.45, 1, 0 ]
+"#;
+        let commands: Vec<SceneCommand> = serde_yml::from_str(yml_str).unwrap();
+        assert_eq!(commands.len(), 1);
+        let command = &commands[0];
+        assert!(matches!(command, SceneCommand::Add(_)));
+        if let SceneCommand::Add(Add::AddCamera(c)) = command {
+            assert_eq!(c.field_of_view, PI / 2.0);
+        } else {
+            panic!("wrong command in yaml");
+        }
     }
 }

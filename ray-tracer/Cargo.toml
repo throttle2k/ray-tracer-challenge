@@ -10,6 +10,7 @@ rayon = "1.10.0"
 perlin_noise = "1.0.1"
 lazy_static = "1.5.0"
 anyhow = "1.0.89"
+meval = "0.2"
 serde_yml = "0.0.12"
 serde = { version = "1.0", features = ["derive"] }
 
